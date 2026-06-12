@@ -1,6 +1,7 @@
-// NOTE: This placeholder daemon binds port 5056 deliberately.
-// Port 5055 belongs to the legacy CamillaDSP switcher until cutover;
-// tonedeck will take over 5055 as part of the production migration (task K).
+// ToneDeck daemon — product port 5055, taken over from the retired legacy
+// album-switcher at install time. install.sh boots out
+// com.avyansh.ft1pro.album-switcher before starting this daemon.
+// Override at runtime with TONEDECK_PORT.
 
 import { VERSION } from '@tonedeck/shared'
 import Fastify from 'fastify'
@@ -136,7 +137,7 @@ export async function buildServer(opts: BuildServerOpts = {}) {
 const isMain = resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1] ?? '')
 
 if (isMain) {
-  const port = Number(process.env.TONEDECK_PORT ?? 5056)
+  const port = Number(process.env.TONEDECK_PORT ?? 5055)
   const dataDir = process.env.TONEDECK_DATA_DIR || undefined
   const server = await buildServer({ dataDir })
   await server.listen({ host: '127.0.0.1', port })

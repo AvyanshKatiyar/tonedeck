@@ -18,6 +18,7 @@
     "smoke:control": "node scripts/smoke/control-smoke.mjs",
     "smoke:ui": "node scripts/smoke/ui-smoke.mjs",
     "smoke:skill": "node scripts/smoke/skill-smoke.mjs",
+    "smoke:panic": "zsh scripts/smoke/panic-smoke.sh",
     "backfill:artwork": "tsx scripts/backfill-artwork.ts"
   },
   "devDependencies": {

@@ -114,20 +114,20 @@ function errorResponse(status: number, error: string): Response {
 describe('actionStatus', () => {
   it('prints engaged/bypass/activePreset fields in human mode', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(MOCK_STATUS))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
     await actionStatus(ctx, { json: false })
 
-    expect(fetchFn).toHaveBeenCalledWith('http://localhost:5056/api/status', expect.any(Object))
+    expect(fetchFn).toHaveBeenCalledWith('http://localhost:5055/api/status', expect.any(Object))
     expect(logs.join('\n')).toContain('engaged')
     expect(logs.join('\n')).toContain('bypass')
   })
 
   it('emits valid JSON in --json mode', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(MOCK_STATUS))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -143,7 +143,7 @@ describe('actionList', () => {
   it('renders a table with SLUG/TITLE/ARTIST/KIND/VER columns', async () => {
     const presets = [{ slug: 'yeezus', title: 'Yeezus', artist: 'Kanye West', kind: 'album', version: 1 }]
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse({ presets }))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -159,7 +159,7 @@ describe('actionList', () => {
   it('emits raw API response in --json mode', async () => {
     const presets = [{ slug: 'yeezus', title: 'Yeezus', kind: 'album', version: 1 }]
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse({ presets }))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -173,7 +173,7 @@ describe('actionList', () => {
 describe('actionShow', () => {
   it('shows title, artist, bands', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(MOCK_PRESET))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -188,13 +188,13 @@ describe('actionShow', () => {
 
   it('calls correct endpoint', async () => {
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(MOCK_PRESET))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     vi.spyOn(console, 'log').mockImplementation(() => {})
 
     await actionShow('yeezus', ctx, { json: false })
 
     expect(fetchFn).toHaveBeenCalledWith(
-      'http://localhost:5056/api/presets/yeezus',
+      'http://localhost:5055/api/presets/yeezus',
       expect.any(Object),
     )
   })
@@ -203,7 +203,7 @@ describe('actionShow', () => {
 describe('actionApply', () => {
   it('throws CliError with exitCode 3 on 409 (not_engaged)', async () => {
     const fetchFn = vi.fn().mockResolvedValue(errorResponse(409, 'Not engaged'))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
 
     const err = await actionApply('yeezus', ctx, { json: false, engage: false }).catch((e) => e)
 
@@ -214,7 +214,7 @@ describe('actionApply', () => {
 
   it('throws CliError with exitCode 2 on 404 (unknown slug)', async () => {
     const fetchFn = vi.fn().mockResolvedValue(errorResponse(404, 'Not found'))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
 
     const err = await actionApply('bad-slug', ctx, { json: false, engage: true }).catch((e) => e)
 
@@ -225,7 +225,7 @@ describe('actionApply', () => {
   it('prints verdict on success', async () => {
     const result = { status: MOCK_STATUS, warnings: [], verdict: 'ok' }
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(result))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -246,7 +246,7 @@ describe('actionTweak', () => {
       .mockResolvedValueOnce(jsonResponse(MOCK_PRESET))   // GET preset
       .mockResolvedValueOnce(jsonResponse(MOCK_PROFILE))  // GET profile
       .mockResolvedValueOnce(jsonResponse(putResult))     // PUT
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -263,7 +263,7 @@ describe('actionTweak', () => {
 
     // The PUT call is the third fetch call
     const putCall = fetchFn.mock.calls[2]!
-    expect(putCall[0]).toBe('http://localhost:5056/api/presets/yeezus')
+    expect(putCall[0]).toBe('http://localhost:5055/api/presets/yeezus')
     const putBody = JSON.parse((putCall[1] as RequestInit).body as string) as {
       preset: Preset
       change: string
@@ -283,7 +283,7 @@ describe('actionTweak', () => {
       .fn()
       .mockResolvedValueOnce(jsonResponse(MOCK_PRESET))
       .mockResolvedValueOnce(jsonResponse(MOCK_PROFILE))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
 
     const err = await actionTweak('yeezus', ctx, {
       json: false,
@@ -310,7 +310,7 @@ describe('actionTweak', () => {
       .mockResolvedValueOnce(jsonResponse(MOCK_PRESET))
       .mockResolvedValueOnce(jsonResponse(MOCK_PROFILE))
       .mockResolvedValueOnce(jsonResponse(putResult))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     vi.spyOn(console, 'log').mockImplementation(() => {})
 
     await actionTweak('yeezus', ctx, {
@@ -343,7 +343,7 @@ describe('actionCreate', () => {
     const newPreset = { ...MOCK_PRESET, slug: 'cli-smoke-test' }
     const createResult = { preset: newPreset, warnings: [], verdict: 'ok' }
     const fetchFn = vi.fn().mockResolvedValue(jsonResponse(createResult, 201))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -369,7 +369,7 @@ describe('actionCreate', () => {
       })
 
       expect(fetchFn).toHaveBeenCalledWith(
-        'http://localhost:5056/api/presets',
+        'http://localhost:5055/api/presets',
         expect.objectContaining({ method: 'POST' }),
       )
       expect(logs.join('\n')).toContain('cli-smoke-test')
@@ -388,7 +388,7 @@ describe('actionDoctor', () => {
       .mockResolvedValueOnce(jsonResponse(MOCK_STATUS))  // status
       .mockResolvedValueOnce(jsonResponse({ presets: new Array(16).fill({}) }))  // presets
 
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -410,7 +410,7 @@ describe('actionDoctor', () => {
 
   it('reports FAIL for daemon reachable and exits 1 when daemon is down', async () => {
     const fetchFn = vi.fn().mockRejectedValue(new Error('ECONNREFUSED'))
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
 
@@ -433,7 +433,7 @@ describe('actionDoctor', () => {
       .mockResolvedValueOnce(jsonResponse(MOCK_STATUS))
       .mockResolvedValueOnce(jsonResponse({ presets: new Array(16).fill({}) }))
 
-    const ctx = makeCtx('http://localhost:5056', fetchFn as FetchFn)
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
     const logs: string[] = []
     vi.spyOn(console, 'log').mockImplementation((...args) => logs.push(args.join(' ')))
     vi.spyOn(process, 'exit').mockImplementation((() => {}) as () => never)

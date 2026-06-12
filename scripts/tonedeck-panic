@@ -1,0 +1,158 @@
+#!/bin/zsh
+# tonedeck-panic — zero-node, zero-daemon panic script.
+# Restores audio output without any dependency on the ToneDeck daemon or Node.js.
+# Installs to /opt/homebrew/bin/tonedeck-panic at cutover.
+#
+# Respects:
+#   TONEDECK_DATA_DIR  (default: ~/.tonedeck)
+#   TONEDECK_PORT      (default: 5055)
+#
+# Always exits 0 — individual step failures print warnings but never abort.
+
+set -uo pipefail
+
+DATA_DIR="${TONEDECK_DATA_DIR:-${HOME}/.tonedeck}"
+PORT="${TONEDECK_PORT:-5055}"
+STATE_FILE="${DATA_DIR}/state.json"
+LEGACY_OUTPUT_FILE="${HOME}/camilladsp/last-real-output.txt"
+# Resolve SwitchAudioSource from PATH first; fall back to Homebrew location.
+# Using PATH lookup makes the script testable with a shim directory.
+SWITCHAUDIO=$(command -v SwitchAudioSource 2>/dev/null || echo "/opt/homebrew/bin/SwitchAudioSource")
+FALLBACK_DEVICE="External Headphones"
+
+warn() { print -P "%F{yellow}[tonedeck-panic] WARNING: $*%f" >&2 }
+info() { print -P "%F{cyan}[tonedeck-panic] $*%f" }
+
+info "=== ToneDeck Panic ==="
+info "DATA_DIR=${DATA_DIR}  PORT=${PORT}"
+
+# ── Step 1: Try the daemon's /api/panic (defense in depth) ────────────────────
+info "Step 1: POST /api/panic to daemon (best-effort)..."
+if curl -s -m 1 -X POST "http://127.0.0.1:${PORT}/api/panic" -o /dev/null -w "%{http_code}" 2>/dev/null | grep -q "^200$"; then
+  info "  daemon handled panic (HTTP 200) — continuing to verify state"
+else
+  warn "  daemon unavailable or returned non-200 — proceeding with local recovery"
+fi
+
+# ── Step 2: Kill camilladsp ────────────────────────────────────────────────────
+info "Step 2: Stopping camilladsp..."
+if pkill -x camilladsp 2>/dev/null; then
+  info "  camilladsp stopped"
+else
+  info "  camilladsp was not running (ok)"
+fi
+
+# ── Step 3: Restore output device ─────────────────────────────────────────────
+info "Step 3: Resolving restore device..."
+
+# 3a. Parse lastRealOutput from state.json (python3 one-liner, tolerates missing/corrupt)
+RESTORE_DEVICE=""
+if [[ -f "${STATE_FILE}" ]]; then
+  RESTORE_DEVICE=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open('${STATE_FILE}'))
+    v = d.get('lastRealOutput') or ''
+    print(v.strip())
+except Exception:
+    print('')
+" 2>/dev/null || true)
+fi
+
+# 3b. Fall back to legacy last-real-output.txt
+if [[ -z "${RESTORE_DEVICE}" && -f "${LEGACY_OUTPUT_FILE}" ]]; then
+  RESTORE_DEVICE=$(< "${LEGACY_OUTPUT_FILE}")
+  RESTORE_DEVICE="${RESTORE_DEVICE// /}"  # trim trailing whitespace/newlines
+  RESTORE_DEVICE="${RESTORE_DEVICE%%[[:space:]]*}"
+  info "  no lastRealOutput in state.json — using legacy file: '${RESTORE_DEVICE}'"
+fi
+
+# 3c. Fall back to hardcoded default
+if [[ -z "${RESTORE_DEVICE}" ]]; then
+  RESTORE_DEVICE="${FALLBACK_DEVICE}"
+  warn "  no saved device found — using hardcoded fallback: '${RESTORE_DEVICE}'"
+fi
+
+info "  candidate restore device: '${RESTORE_DEVICE}'"
+
+# 3d. Verify device exists; if absent, pick first non-BlackHole line
+if command -v "${SWITCHAUDIO}" &>/dev/null; then
+  DEVICE_LIST=$(${SWITCHAUDIO} -a -t output 2>/dev/null || true)
+  if [[ -z "${DEVICE_LIST}" ]]; then
+    warn "  SwitchAudioSource -a returned empty list; skipping device switch"
+  else
+    if echo "${DEVICE_LIST}" | grep -qFx "${RESTORE_DEVICE}"; then
+      info "  '${RESTORE_DEVICE}' is present in device list"
+    else
+      warn "  '${RESTORE_DEVICE}' NOT in device list — picking first non-BlackHole output"
+      RESTORE_DEVICE=$(echo "${DEVICE_LIST}" | grep -v -i "blackhole" | head -1 || true)
+      if [[ -z "${RESTORE_DEVICE}" ]]; then
+        warn "  no non-BlackHole device found — skipping switch"
+        RESTORE_DEVICE=""
+      else
+        info "  selected fallback device: '${RESTORE_DEVICE}'"
+      fi
+    fi
+
+    if [[ -n "${RESTORE_DEVICE}" ]]; then
+      info "  switching output to '${RESTORE_DEVICE}'..."
+      if ${SWITCHAUDIO} -s "${RESTORE_DEVICE}" -t output 2>/dev/null; then
+        info "  switched OK"
+      else
+        warn "  SwitchAudioSource -s failed"
+      fi
+    fi
+  fi
+else
+  warn "  SwitchAudioSource not found at ${SWITCHAUDIO} — skipping device switch"
+fi
+
+# ── Step 4: Clear engaged flag in state.json (atomic temp+rename) ─────────────
+info "Step 4: Clearing engaged flag in state.json..."
+if [[ -f "${STATE_FILE}" ]]; then
+  python3 -c "
+import json, os, sys, tempfile
+
+state_file = '${STATE_FILE}'
+try:
+    with open(state_file) as f:
+        d = json.load(f)
+    d['engaged'] = False
+    dir_ = os.path.dirname(state_file)
+    fd, tmp = tempfile.mkstemp(dir=dir_, suffix='.tmp')
+    try:
+        with os.fdopen(fd, 'w') as fout:
+            json.dump(d, fout)
+        os.rename(tmp, state_file)
+        print('[tonedeck-panic] state.json: engaged set to false')
+    except Exception:
+        try:
+            os.unlink(tmp)
+        except Exception:
+            pass
+        raise
+except Exception as e:
+    print('[tonedeck-panic] WARNING: could not update state.json: ' + str(e), file=sys.stderr)
+" 2>&1 || warn "  python3 state update failed (skipping)"
+else
+  info "  state.json not found — skipping (nothing to clear)"
+fi
+
+# ── Step 5: Final verification ─────────────────────────────────────────────────
+info "Step 5: Verification..."
+if command -v "${SWITCHAUDIO}" &>/dev/null; then
+  CURRENT_OUT=$(${SWITCHAUDIO} -c -t output 2>/dev/null || echo "(unknown)")
+  info "  current output device: '${CURRENT_OUT}'"
+else
+  info "  SwitchAudioSource unavailable — cannot verify output device"
+fi
+
+CAMILLA_PIDS=$(pgrep -x camilladsp 2>/dev/null || true)
+if [[ -z "${CAMILLA_PIDS}" ]]; then
+  info "  camilladsp: not running (clean)"
+else
+  warn "  camilladsp still running (pids: ${CAMILLA_PIDS})"
+fi
+
+info "=== Panic complete. Exit 0. ==="
+exit 0

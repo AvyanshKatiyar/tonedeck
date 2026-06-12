@@ -75,7 +75,7 @@ program
     '--url <url>',
     'Daemon base URL',
     process.env.TONEDECK_URL ??
-      `http://127.0.0.1:${process.env.TONEDECK_PORT ?? 5056}`,
+      `http://127.0.0.1:${process.env.TONEDECK_PORT ?? 5055}`,
   )
   .option('--json', 'Machine-friendly JSON output (one object per stdout line)')
   .addHelpText(
