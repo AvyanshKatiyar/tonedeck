@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "slug": "jesus-is-king",
+  "kind": "album",
+  "title": "Jesus Is King",
+  "artist": "Kanye West",
+  "profile": "ft1pro",
+  "preamp": 2,
+  "bands": [
+    {
+      "id": "Bass",
+      "type": "lowshelf",
+      "freq": 60,
+      "q": 0.7,
+      "gain": 0
+    },
+    {
+      "id": "KickBody",
+      "type": "peaking",
+      "freq": 120,
+      "q": 0.9,
+      "gain": -0.2
+    },
+    {
+      "id": "LowMidClean",
+      "type": "peaking",
+      "freq": 250,
+      "q": 1,
+      "gain": 0.4
+    },
+    {
+      "id": "UpperMidTame",
+      "type": "peaking",
+      "freq": 3200,
+      "q": 1.2,
+      "gain": -0.8
+    },
+    {
+      "id": "PresenceTame",
+      "type": "peaking",
+      "freq": 5000,
+      "q": 2,
+      "gain": -0.8
+    },
+    {
+      "id": "Air",
+      "type": "highshelf",
+      "freq": 10000,
+      "q": 0.7,
+      "gain": 1.8
+    }
+  ],
+  "intent": "loud choirs forward, lean bass, bright gospel air",
+  "provenance": {
+    "createdBy": "builtin",
+    "history": []
+  },
+  "version": 1,
+  "createdAt": "2026-06-12T00:00:00.000Z",
+  "updatedAt": "2026-06-12T00:00:00.000Z"
+}
