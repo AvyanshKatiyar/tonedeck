@@ -3,3 +3,9 @@ dist
 .DS_Store
 *.log
 .vite
+
+# codealmanac
+.almanac/index.db
+.almanac/index.db-wal
+.almanac/index.db-shm
+.almanac/runs/

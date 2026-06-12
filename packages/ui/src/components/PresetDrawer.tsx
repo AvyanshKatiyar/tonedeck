@@ -1,8 +1,9 @@
 /**
  * PresetDrawer — right-side 420px panel for tuning one preset. Header (art,
  * title/artist, version, kind), the EqCurveCanvas showpiece, VibeSliders, a
- * Save (auto-composed change string + one-line reason) / Revert pair, and an
- * Advanced collapsible (BandTable + provenance history).
+ * Save (auto-composed change string + one-line reason) / Revert pair, then the
+ * full control set inline: BandTable, reset-to-original, delete (two-step
+ * confirm, active-preset protected), and provenance history.
  */
 import { useEffect, useState } from 'react'
 import { api } from '../api.js'
@@ -37,7 +38,6 @@ export function PresetDrawer() {
   const { state, actions } = useStore()
   const { drawerSlug, base, draft, status } = state
   const [reason, setReason] = useState('')
-  const [advanced, setAdvanced] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   // Reset transient state whenever a different preset is opened.
@@ -105,59 +105,51 @@ export function PresetDrawer() {
             {dirty && <div className="drawer__changehint">{change}</div>}
           </div>
 
-          <button
-            type="button"
-            className="drawer__advtoggle"
-            onClick={() => setAdvanced((v) => !v)}
-          >
-            {advanced ? '▾' : '▸'} Advanced
-          </button>
-          {advanced && (
-            <div className="drawer__advanced">
-              <BandTable />
-              {base.version > 1 && (
-                <button
-                  type="button"
-                  className="btn drawer__resetoriginal"
-                  onClick={actions.resetOriginal}
-                  title="Restore this preset's original values (your saved changes stay in history)"
-                >
-                  Reset to original
-                </button>
-              )}
+          <div className="drawer__divider" aria-hidden />
+          <div className="drawer__advanced">
+            <BandTable />
+            {base.version > 1 && (
               <button
                 type="button"
-                className={`btn btn--danger drawer__delete ${confirmDelete ? 'btn--danger-armed' : ''}`}
-                disabled={isActive}
-                title={
-                  isActive
-                    ? 'This preset is playing — switch to another before deleting'
-                    : 'Remove this preset from your library'
-                }
-                onClick={() => {
-                  if (!confirmDelete) {
-                    setConfirmDelete(true)
-                    return
-                  }
-                  void actions.deletePreset()
-                }}
+                className="btn drawer__resetoriginal"
+                onClick={actions.resetOriginal}
+                title="Restore this preset's original values (your saved changes stay in history)"
               >
-                {confirmDelete ? 'Click again to delete' : 'Delete preset'}
+                Reset to original
               </button>
-              {history.length > 0 && (
-                <div className="provenance">
-                  <div className="provenance__head">Recent changes</div>
-                  {history.map((h, i) => (
-                    <div className="provenance__row" key={i}>
-                      <span className="provenance__change">{h.change}</span>
-                      <span className="provenance__reason">{h.reason}</span>
-                      <span className="provenance__date">{h.at.slice(0, 10)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
+            )}
+            <button
+              type="button"
+              className={`btn btn--danger drawer__delete ${confirmDelete ? 'btn--danger-armed' : ''}`}
+              disabled={isActive}
+              title={
+                isActive
+                  ? 'This preset is playing — switch to another before deleting'
+                  : 'Remove this preset from your library'
+              }
+              onClick={() => {
+                if (!confirmDelete) {
+                  setConfirmDelete(true)
+                  return
+                }
+                void actions.deletePreset()
+              }}
+            >
+              {confirmDelete ? 'Click again to delete' : 'Delete preset'}
+            </button>
+            {history.length > 0 && (
+              <div className="provenance">
+                <div className="provenance__head">Recent changes</div>
+                {history.map((h, i) => (
+                  <div className="provenance__row" key={i}>
+                    <span className="provenance__change">{h.change}</span>
+                    <span className="provenance__reason">{h.reason}</span>
+                    <span className="provenance__date">{h.at.slice(0, 10)}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </aside>
     </>

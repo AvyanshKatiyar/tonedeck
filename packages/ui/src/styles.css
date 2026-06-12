@@ -658,17 +658,10 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-/* advanced */
-.drawer__advtoggle {
-  margin-top: 22px;
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 12px;
-  padding: 6px 0;
-}
-.drawer__advtoggle:hover {
-  color: var(--text);
+/* advanced (always visible) */
+.drawer__divider {
+  border-top: 1px solid var(--line);
+  margin: 18px 0 16px;
 }
 .drawer__advanced {
   margin-top: 8px;
