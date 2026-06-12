@@ -117,7 +117,8 @@ const isMain = resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[
 
 if (isMain) {
   const port = Number(process.env.TONEDECK_PORT ?? 5056)
-  const server = await buildServer()
+  const dataDir = process.env.TONEDECK_DATA_DIR || undefined
+  const server = await buildServer({ dataDir })
   await server.listen({ host: '127.0.0.1', port })
   console.log(`tonedeck daemon listening on http://127.0.0.1:${port}`)
 
