@@ -1,0 +1,19 @@
+{
+  "name": "tonedeck",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "build": "npm run build -w packages/shared && npm run build -w packages/daemon && npm run build -w packages/cli && npm run build -w packages/ui",
+    "test": "vitest run",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "dev:daemon": "npm run build -w packages/shared && tsx watch packages/daemon/src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
