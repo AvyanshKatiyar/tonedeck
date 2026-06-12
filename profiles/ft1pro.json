@@ -1,0 +1,22 @@
+{
+  "id": "ft1pro",
+  "name": "FiiO FT1 Pro",
+  "playbackDeviceName": "External Headphones",
+  "captureDeviceName": "BlackHole 2ch",
+  "bandTemplate": [
+    { "id": "Bass", "type": "lowshelf", "freq": 60, "q": 0.7, "gain": 0 },
+    { "id": "KickBody", "type": "peaking", "freq": 120, "q": 0.9, "gain": 0 },
+    { "id": "LowMidClean", "type": "peaking", "freq": 250, "q": 1.0, "gain": 0 },
+    { "id": "UpperMidTame", "type": "peaking", "freq": 3200, "q": 1.2, "gain": 0 },
+    { "id": "PresenceTame", "type": "peaking", "freq": 5000, "q": 2.0, "gain": 0 },
+    { "id": "Air", "type": "highshelf", "freq": 10000, "q": 0.7, "gain": 0 }
+  ],
+  "limits": {
+    "bandGainDb": [-8, 6],
+    "preampDb": [-6, 4],
+    "q": [0.3, 5],
+    "freqHz": [20, 20000],
+    "clipHeadroomDb": 3
+  },
+  "houseNotes": "House default preamp is +2 dB and the tuning leans loud; combined boosts of roughly +5 dB are tolerated with a warning rather than a rejection. The FT1 Pro planar driver takes the 60 Hz bass shelf cleanly without flab. The 3.2 kHz and 5 kHz peaking cuts are the primary harshness levers — reach for those before touching anything else."
+}
