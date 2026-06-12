@@ -81,3 +81,15 @@ If `PresenceTame` (sibilance) or `LowMidClean` (mud) cuts aren't surgical enough
 the fix is a **narrow dedicated band** — `DeEss` (6.5 kHz, Q 3) or `MudCut`
 (700 Hz, Q 1.4). These **cannot be added with `tweak`**; bake them into the
 preset JSON and recreate it. See `band-guide.md` → "Adding a band beyond the template."
+
+### "Go back / undo / it was better before"
+Don't reverse-engineer old values from history text — use the built-in undo:
+
+| They say | Command |
+|---|---|
+| "undo that" / "go back one step" | `tonedeck revert <slug> --apply --reason "<their words>"` |
+| "back to the original" / "reset it" | `tonedeck revert <slug> --original --apply --reason "<their words>"` |
+| "what versions are there?" | `tonedeck versions <slug>` |
+
+`--apply` only when that preset is what's playing. The revert appears in history
+("reverted to v2") and is itself revertable, so nothing is ever lost.

@@ -57,6 +57,22 @@ export interface StoreResult {
   verdict: string
 }
 
+export interface VersionInfo {
+  version: number
+  updatedAt: string
+  /** The change that PRODUCED this version (null for v1 / unknown). */
+  change: string | null
+  current: boolean
+}
+
+export interface RevertOpts {
+  /** Restore a specific snapshot version. */
+  toVersion?: number
+  /** Restore v1 / the factory builtin values. */
+  original?: boolean
+  reason?: string
+}
+
 export interface StoreInitOpts {
   presetsDir: string
   profilesDir: string
@@ -191,6 +207,9 @@ export class PresetStore {
 
     const { preset: safe, warnings, verdict } = this._runSafety(preset, opts)
 
+    // Snapshot the outgoing version so every saved change is revertable.
+    await this._writeSnapshot(old)
+
     const now = new Date().toISOString()
     const newEntry = { at: now, change: history.change, reason: history.reason }
     const final: Preset = {
@@ -208,6 +227,114 @@ export class PresetStore {
     await this._writePreset(final)
     this.presets.set(final.slug, final)
     return { preset: final, warnings, verdict }
+  }
+
+  /** Snapshot versions available for a preset (ascending), plus the current. */
+  async listVersions(slug: string): Promise<VersionInfo[]> {
+    const cur = this.presets.get(slug)
+    if (!cur) throw new StoreError('not_found', `Preset "${slug}" not found`)
+    const snaps = await this._readSnapshots(slug)
+    const infos: VersionInfo[] = snaps.map((p) => ({
+      version: p.version,
+      updatedAt: p.updatedAt,
+      change: p.provenance.history.at(-1)?.change ?? null,
+      current: false,
+    }))
+    infos.push({
+      version: cur.version,
+      updatedAt: cur.updatedAt,
+      change: cur.provenance.history.at(-1)?.change ?? null,
+      current: true,
+    })
+    return infos.sort((a, b) => a.version - b.version)
+  }
+
+  /**
+   * Restore a previous version of a preset's SOUND (preamp/bands/intent/notes).
+   * Identity fields (slug, title, artist, artwork, createdBy, createdAt) are
+   * kept from the current preset; the version number keeps moving FORWARD and
+   * the revert itself is snapshotted, so a revert is always revertable too.
+   *
+   * Default: undo the last saved change (highest snapshot). `original` falls
+   * back to the builtin factory JSON when no v1 snapshot exists (covers
+   * presets tweaked before snapshots shipped).
+   */
+  async revertPreset(slug: string, opts: RevertOpts = {}): Promise<StoreResult & { revertedTo: string }> {
+    const cur = this.presets.get(slug)
+    if (!cur) throw new StoreError('not_found', `Preset "${slug}" not found`)
+
+    const snaps = await this._readSnapshots(slug)
+    let source: Preset | undefined
+    let label: string
+
+    if (opts.toVersion !== undefined) {
+      source = snaps.find((p) => p.version === opts.toVersion)
+      if (!source) {
+        throw new StoreError('not_found', `No saved snapshot of "${slug}" at version ${opts.toVersion}`)
+      }
+      label = `v${opts.toVersion}`
+    } else if (opts.original) {
+      source = snaps.find((p) => p.version === 1)
+      label = 'v1'
+      if (!source) {
+        source = await this._readBuiltin(slug)
+        label = 'factory original'
+      }
+      if (!source) {
+        throw new StoreError(
+          'not_found',
+          `No original available for "${slug}" — it has no v1 snapshot and no factory builtin`,
+        )
+      }
+    } else {
+      source = snaps.at(-1)
+      if (!source) {
+        const builtin = await this._readBuiltin(slug)
+        if (builtin) {
+          source = builtin
+          label = 'factory original'
+        } else {
+          throw new StoreError(
+            'not_found',
+            `No saved versions of "${slug}" to revert to (it has never been changed since snapshots were introduced)`,
+          )
+        }
+      } else {
+        label = `v${source.version}`
+      }
+    }
+
+    const restored: Preset = {
+      ...cur,
+      preamp: source.preamp,
+      bands: source.bands,
+      intent: source.intent,
+      notes: source.notes,
+    }
+
+    // Clamp only — NO autoTrim: a revert must restore values exactly (builtins
+    // are grandfathered into 'warn' territory by design).
+    const { preset: safe, warnings, verdict } = this._runSafety(restored, { clamp: true, autoTrim: false })
+
+    await this._writeSnapshot(cur)
+    const now = new Date().toISOString()
+    const final: Preset = {
+      ...safe,
+      version: cur.version + 1,
+      updatedAt: now,
+      createdAt: cur.createdAt,
+      provenance: {
+        ...cur.provenance,
+        history: [
+          ...cur.provenance.history,
+          { at: now, change: `reverted to ${label}`, reason: opts.reason ?? 'revert requested' },
+        ],
+      },
+    }
+
+    await this._writePreset(final)
+    this.presets.set(final.slug, final)
+    return { preset: final, warnings, verdict, revertedTo: label }
   }
 
   async deletePreset(slug: string): Promise<void> {
@@ -286,5 +413,45 @@ export class PresetStore {
     const tmp = `${path}.tmp`
     await fs.writeFile(tmp, JSON.stringify(preset, null, 2) + '\n', 'utf-8')
     await fs.rename(tmp, path)
+  }
+
+  /** Snapshot a preset version to <presetsDir>/.history/<slug>/v<N>.json. */
+  private async _writeSnapshot(preset: Preset): Promise<void> {
+    const dir = join(this.presetsDir, '.history', preset.slug)
+    await fs.mkdir(dir, { recursive: true })
+    const path = join(dir, `v${preset.version}.json`)
+    const tmp = `${path}.tmp`
+    await fs.writeFile(tmp, JSON.stringify(preset, null, 2) + '\n', 'utf-8')
+    await fs.rename(tmp, path)
+  }
+
+  /** All snapshots for a slug, ascending by version. [] when none. */
+  private async _readSnapshots(slug: string): Promise<Preset[]> {
+    const dir = join(this.presetsDir, '.history', slug)
+    let files: string[]
+    try {
+      files = await fs.readdir(dir)
+    } catch {
+      return []
+    }
+    const out: Preset[] = []
+    for (const f of files.filter((f) => f.endsWith('.json'))) {
+      try {
+        out.push(parsePreset(JSON.parse(await fs.readFile(join(dir, f), 'utf-8'))))
+      } catch {
+        /* skip corrupt snapshots */
+      }
+    }
+    return out.sort((a, b) => a.version - b.version)
+  }
+
+  /** The factory builtin JSON for a slug, or undefined for custom presets. */
+  private async _readBuiltin(slug: string): Promise<Preset | undefined> {
+    try {
+      const raw = await fs.readFile(join(this.builtinPresetsDir, `${slug}.json`), 'utf-8')
+      return parsePreset(JSON.parse(raw))
+    } catch {
+      return undefined
+    }
   }
 }

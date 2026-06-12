@@ -87,6 +87,67 @@ export async function actionShow(
   out(opts.json, preset, fmtPreset(preset))
 }
 
+// ─── versions / revert ────────────────────────────────────────────────────────
+
+interface VersionInfo {
+  version: number
+  updatedAt: string
+  change: string | null
+  current: boolean
+}
+
+export async function actionVersions(
+  slug: string,
+  ctx: ApiCtx,
+  opts: { json: boolean },
+): Promise<void> {
+  const data = await apiGet<{ versions: VersionInfo[] }>(
+    ctx,
+    `/api/presets/${encodeURIComponent(slug)}/versions`,
+  )
+  if (opts.json) {
+    console.log(JSON.stringify(data))
+    return
+  }
+  for (const v of data.versions) {
+    const marker = v.current ? '*' : ' '
+    console.log(
+      `${marker} v${String(v.version).padEnd(3)} ${v.updatedAt.slice(0, 16)}  ${v.change ?? '(initial)'}`,
+    )
+  }
+  console.log('* = current. Revert with: tonedeck revert <slug> [--to <version> | --original]')
+}
+
+export async function actionRevert(
+  slug: string,
+  ctx: ApiCtx,
+  opts: { json: boolean; original: boolean; to?: number; reason?: string; apply: boolean },
+): Promise<void> {
+  const body: Record<string, unknown> = {}
+  if (opts.original) body.original = true
+  if (opts.to !== undefined) body.toVersion = opts.to
+  if (opts.reason) body.reason = opts.reason
+  const result = await apiPost<{
+    preset: Preset
+    warnings: string[]
+    verdict: string
+    revertedTo: string
+  }>(ctx, `/api/presets/${encodeURIComponent(slug)}/revert`, body, 'refused')
+
+  if (opts.apply) {
+    await apiPost(ctx, `/api/presets/${encodeURIComponent(slug)}/apply`, { engage: false }, 'refused')
+  }
+
+  if (opts.json) {
+    console.log(JSON.stringify(result))
+  } else {
+    for (const w of result.warnings) process.stderr.write(`! ${w}\n`)
+    console.log(
+      `Reverted "${slug}" to ${result.revertedTo} (now v${result.preset.version})${opts.apply ? ' and applied' : ''}`,
+    )
+  }
+}
+
 // ─── apply ────────────────────────────────────────────────────────────────────
 
 export async function actionApply(

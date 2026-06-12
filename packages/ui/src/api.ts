@@ -76,6 +76,11 @@ export const api = {
   preview: (preset: Preset) => req<{ ok: true }>('/api/preview', json({ preset })),
 
   create: (preset: Preset) => req<MutationResponse>('/api/presets', json({ preset })),
+  revertOriginal: (slug: string) =>
+    req<MutationResponse & { revertedTo: string }>(
+      `/api/presets/${slug}/revert`,
+      json({ original: true, reason: 'reset from UI' }),
+    ),
   update: (slug: string, preset: Preset, change: string, reason: string) =>
     req<MutationResponse>(`/api/presets/${slug}`, {
       method: 'PUT',

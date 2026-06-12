@@ -272,3 +272,96 @@ describe('deletePreset', () => {
     )
   })
 })
+
+// ── versions + revert ───────────────────────────────────────────────────────────
+describe('revertPreset', () => {
+  const gainOf = (r: { preset: { bands: { id: string; gain: number }[] } } | { bands: { id: string; gain: number }[] }) => {
+    const bands = 'preset' in r ? r.preset.bands : r.bands
+    return bands.find((b) => b.id === 'Bass')!.gain
+  }
+
+  it('updatePreset snapshots the outgoing version', async () => {
+    await store.createPreset(makePreset())
+    await store.updatePreset(
+      'test-album',
+      makePreset({ bands: [{ id: 'Bass', type: 'lowshelf', freq: 60, q: 0.7, gain: 2 }] }),
+      { change: 'Bass +1', reason: 'test' },
+    )
+    const snap = JSON.parse(
+      await readFile(join(tmpDir, 'presets', '.history', 'test-album', 'v1.json'), 'utf-8'),
+    )
+    expect(snap.version).toBe(1)
+    expect(gainOf(snap)).toBe(1)
+  })
+
+  it('bare revert undoes the last saved change; revert is itself revertable', async () => {
+    await store.createPreset(makePreset())
+    for (const g of [2, 3]) {
+      await store.updatePreset(
+        'test-album',
+        makePreset({ bands: [{ id: 'Bass', type: 'lowshelf', freq: 60, q: 0.7, gain: g }] }),
+        { change: `Bass → ${g}`, reason: 'test' },
+      )
+    }
+    const r = await store.revertPreset('test-album')
+    expect(r.revertedTo).toBe('v2')
+    expect(r.preset.version).toBe(4) // version moves FORWARD
+    expect(gainOf(r)).toBe(2)
+    expect(r.preset.provenance.history.at(-1)!.change).toBe('reverted to v2')
+
+    const back = await store.revertPreset('test-album', { toVersion: 3 })
+    expect(gainOf(back)).toBe(3)
+    expect(back.preset.version).toBe(5)
+  })
+
+  it('revert --to restores a specific version; unknown version → not_found', async () => {
+    await store.createPreset(makePreset())
+    await store.updatePreset(
+      'test-album',
+      makePreset({ bands: [{ id: 'Bass', type: 'lowshelf', freq: 60, q: 0.7, gain: 4 }] }),
+      { change: 'Bass → 4', reason: 'test' },
+    )
+    const r = await store.revertPreset('test-album', { toVersion: 1 })
+    expect(gainOf(r)).toBe(1)
+    await expect(store.revertPreset('test-album', { toVersion: 99 })).rejects.toMatchObject({
+      code: 'not_found',
+    })
+  })
+
+  it('revert --original falls back to the factory builtin when no v1 snapshot exists', async () => {
+    // Simulate a pre-snapshot tweak: update, then wipe the history dir.
+    const yeezus = store.getPreset('yeezus')!
+    await store.updatePreset(
+      'yeezus',
+      { ...yeezus, bands: yeezus.bands.map((b) => (b.id === 'Bass' ? { ...b, gain: 4 } : b)) },
+      { change: 'Bass → 4', reason: 'test' },
+    )
+    await rm(join(tmpDir, 'presets', '.history'), { recursive: true, force: true })
+
+    const r = await store.revertPreset('yeezus', { original: true })
+    expect(r.revertedTo).toBe('factory original')
+    const factory = JSON.parse(await readFile(join(BUILTIN_PRESETS_DIR, 'yeezus.json'), 'utf-8'))
+    expect(r.preset.bands).toEqual(factory.bands)
+    expect(r.preset.preamp).toBe(factory.preamp) // exact restore — no autoTrim
+  })
+
+  it('custom preset with no snapshots and no builtin → not_found with guidance', async () => {
+    await store.createPreset(makePreset())
+    await expect(store.revertPreset('test-album')).rejects.toMatchObject({ code: 'not_found' })
+    await expect(store.revertPreset('test-album', { original: true })).rejects.toMatchObject({
+      code: 'not_found',
+    })
+  })
+
+  it('listVersions reports snapshots plus current', async () => {
+    await store.createPreset(makePreset())
+    await store.updatePreset(
+      'test-album',
+      makePreset({ bands: [{ id: 'Bass', type: 'lowshelf', freq: 60, q: 0.7, gain: 2 }] }),
+      { change: 'Bass +1', reason: 'test' },
+    )
+    const versions = await store.listVersions('test-album')
+    expect(versions.map((v) => v.version)).toEqual([1, 2])
+    expect(versions.at(-1)).toMatchObject({ current: true, change: 'Bass +1' })
+  })
+})

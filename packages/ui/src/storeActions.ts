@@ -121,6 +121,23 @@ export function createActions(
         fail(e)
       }
     },
+    resetOriginal: async () => {
+      const { drawerSlug, status } = ref.current
+      if (!drawerSlug) return
+      try {
+        const r = await api.revertOriginal(drawerSlug)
+        // Make it audible immediately if this preset is what's playing.
+        if (status?.engaged && status.activePreset === drawerSlug) {
+          await api.apply(drawerSlug, false)
+        }
+        toast(`Restored ${r.revertedTo}`, 'info')
+        dispatch({ t: 'drawerOpen', slug: drawerSlug, preset: r.preset })
+        dispatch({ t: 'vibes', vibes: ZERO_VIBES, draft: r.preset })
+        await refreshPresets()
+      } catch (e) {
+        fail(e)
+      }
+    },
     setAddOpen: (open) => dispatch({ t: 'add', open }),
     ackClip: () => dispatch({ t: 'clipAck', value: ref.current.status?.clippedSamples ?? 0 }),
   }

@@ -15,6 +15,8 @@ import {
   actionStatus,
   actionList,
   actionShow,
+  actionVersions,
+  actionRevert,
   actionApply,
   actionOn,
   actionOff,
@@ -209,6 +211,31 @@ program
           vibes: cmdOpts.vibe,
           reason: cmdOpts.reason ?? '',
           apply: cmdOpts.apply,
+        }),
+      )(),
+  )
+
+program
+  .command('versions <slug>')
+  .description('List saved versions of a preset')
+  .action((slug: string) => wrap(isJson, () => actionVersions(slug, ctx(), { json: isJson() }))())
+
+program
+  .command('revert <slug>')
+  .description('Restore a previous version (default: undo the last saved change)')
+  .option('--original', 'Restore the original (v1 / factory builtin) values')
+  .option('--to <version>', 'Restore a specific saved version', (v: string) => Number(v))
+  .option('--reason <text>', 'Reason recorded in provenance history')
+  .option('--apply', 'Apply (without engage) after reverting')
+  .action(
+    (slug: string, cmdOpts: { original?: boolean; to?: number; reason?: string; apply?: boolean }) =>
+      wrap(isJson, () =>
+        actionRevert(slug, ctx(), {
+          json: isJson(),
+          original: cmdOpts.original ?? false,
+          to: cmdOpts.to,
+          reason: cmdOpts.reason,
+          apply: cmdOpts.apply ?? false,
         }),
       )(),
   )

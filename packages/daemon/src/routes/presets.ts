@@ -7,6 +7,8 @@
  *   POST /api/presets          → 201 { preset, warnings, verdict } | 409 | 422
  *   PUT  /api/presets/:slug    → 200 { preset, warnings, verdict } | 404 | 422
  *   DELETE /api/presets/:slug  → 204 | 404
+ *   GET  /api/presets/:slug/versions → { versions } | 404
+ *   POST /api/presets/:slug/revert   → 200 { preset, warnings, verdict, revertedTo } | 404 | 422
  *   GET  /api/profiles         → { profiles: Profile[] }
  *   GET  /api/profiles/:id     → Profile | 404
  */
@@ -75,6 +77,25 @@ const presetsPlugin: FastifyPluginAsync<PresetsPluginOpts> = async (fastify, { s
     try {
       await store.deletePreset(slug)
       return reply.status(204).send()
+    } catch (e) {
+      return mapStoreError(e, reply)
+    }
+  })
+
+  fastify.get('/api/presets/:slug/versions', async (req, reply) => {
+    const { slug } = req.params as { slug: string }
+    try {
+      return { versions: await store.listVersions(slug) }
+    } catch (e) {
+      return mapStoreError(e, reply)
+    }
+  })
+
+  fastify.post('/api/presets/:slug/revert', async (req, reply) => {
+    const { slug } = req.params as { slug: string }
+    const body = (req.body ?? {}) as { toVersion?: number; original?: boolean; reason?: string }
+    try {
+      return await store.revertPreset(slug, body)
     } catch (e) {
       return mapStoreError(e, reply)
     }

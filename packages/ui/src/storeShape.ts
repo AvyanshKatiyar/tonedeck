@@ -117,6 +117,7 @@ export interface Actions {
   revert: () => void
   preview: (draft: Preset) => Promise<void>
   save: (change: string, reason: string) => Promise<void>
+  resetOriginal: () => Promise<void>
   setAddOpen: (open: boolean) => void
   ackClip: () => void
 }

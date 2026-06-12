@@ -109,6 +109,16 @@ export function PresetDrawer() {
           {advanced && (
             <div className="drawer__advanced">
               <BandTable />
+              {base.version > 1 && (
+                <button
+                  type="button"
+                  className="btn drawer__resetoriginal"
+                  onClick={actions.resetOriginal}
+                  title="Restore this preset's original values (your saved changes stay in history)"
+                >
+                  Reset to original
+                </button>
+              )}
               {history.length > 0 && (
                 <div className="provenance">
                   <div className="provenance__head">Recent changes</div>
