@@ -32,6 +32,12 @@
   <key>ThrottleInterval</key>
   <integer>10</integer>
 
+  <!-- camilladsp is spawned detached and must outlive daemon restarts
+       (control plane down must not mean audio down). Without this, launchd
+       kills the abandoned child when the daemon exits. -->
+  <key>AbandonProcessGroup</key>
+  <true/>
+
   <key>StandardOutPath</key>
   <string>/Users/avyanshkatiyar/.tonedeck/logs/daemon.out.log</string>
 

@@ -82,6 +82,7 @@ export interface ChildLike {
   on(event: 'exit', listener: (code: number | null, signal: NodeJS.Signals | null) => void): unknown
   on(event: 'error', listener: (err: Error) => void): unknown
   once(event: 'exit', listener: (code: number | null, signal: NodeJS.Signals | null) => void): unknown
+  unref?(): void
 }
 
 export type SpawnFn = (command: string, args: string[], options: Record<string, unknown>) => ChildLike
@@ -120,6 +121,9 @@ interface LifecycleTiming {
   killKillMs: number
   /** Interval for the "did the playback device vanish?" watchdog. */
   deviceCheckMs: number
+  /** Min gap between automatic re-routes after output theft; a second theft
+   *  inside this window means something else is managing audio — disengage. */
+  rerouteCooldownMs: number
 }
 
 export interface LifecycleOpts {
@@ -213,6 +217,8 @@ export class Lifecycle extends EventEmitter {
   private stopping = false
   private deviceInterval: ReturnType<typeof setInterval> | null = null
   private deviceCheckRunning = false
+  /** Wall-clock of the last automatic re-route after output theft. */
+  private lastRerouteAt = 0
 
   /** Mutex: a promise chain that serializes mutating operations. */
   private chain: Promise<unknown> = Promise.resolve()
@@ -232,6 +238,7 @@ export class Lifecycle extends EventEmitter {
       killTermMs: opts._timing?.killTermMs ?? 2000,
       killKillMs: opts._timing?.killKillMs ?? 4000,
       deviceCheckMs: opts._timing?.deviceCheckMs ?? 3000,
+      rerouteCooldownMs: opts._timing?.rerouteCooldownMs ?? 15000,
     }
 
     this.stateFile = join(this.dataDir, 'state.json')
@@ -339,11 +346,21 @@ export class Lifecycle extends EventEmitter {
   // ── engage ──────────────────────────────────────────────────────────────────
 
   private async _engage(slug?: string): Promise<LifecycleStatus> {
-    // Idempotent: already live → behave like an apply.
+    // Idempotent: already live → behave like an apply — UNLESS the system
+    // output has been switched away from the capture loopback (macOS does this
+    // automatically when a new device is plugged in), in which case the chain
+    // is silently bypassed and the thief device is where the user is actually
+    // listening. Tear down and fall through to a full re-engage so
+    // resolvePlaybackDevice re-targets it.
     if (this.state.engaged && this.client && this.client.isConnected) {
-      const target = slug ?? this.state.activePreset ?? 'mbdtf'
-      await this._applyPreset(target)
-      return this.status()
+      const thief = await this._outputStolen()
+      if (!thief) {
+        const target = slug ?? this.state.activePreset ?? 'mbdtf'
+        await this._applyPreset(target)
+        return this.status()
+      }
+      this.lastEvent = `system output is "${thief}" — re-routing EQ chain`
+      await this._teardownDsp({ restoreOutput: false })
     }
 
     const target = slug ?? this.state.activePreset ?? 'mbdtf'
@@ -382,8 +399,13 @@ export class Lifecycle extends EventEmitter {
           '--loglevel',
           'info',
         ],
-        { stdio: ['ignore', 'ignore', 'ignore'] },
+        // detached + unref: camilladsp must SURVIVE a daemon restart (control
+        // plane down ≠ audio down). Without this, launchd tears the child down
+        // with the daemon's process group and reconcile() finds nothing to
+        // adopt. Pairs with AbandonProcessGroup=true in the LaunchAgent plist.
+        { stdio: ['ignore', 'ignore', 'ignore'], detached: true },
       )
+      child.unref?.()
       this.child = child
       child.on('error', () => {
         // Spawn/runtime error surfaces as a failed connect below or as an exit;
@@ -552,14 +574,30 @@ export class Lifecycle extends EventEmitter {
   // ── disengage ───────────────────────────────────────────────────────────────
 
   private async _disengage(): Promise<LifecycleStatus> {
-    this.stopping = true
-    this._clearDeviceInterval()
-    // Restore the system output FIRST so audio has somewhere to go the instant
-    // we tear CamillaDSP down.
+    await this._teardownDsp({ restoreOutput: true })
     try {
-      await this._restoreOutput()
+      await this._setState({ engaged: false })
     } catch {
       /* tolerant */
+    }
+    this.lastEvent = 'disengaged'
+    return this.status()
+  }
+
+  /**
+   * Tear down the DSP child + client. With `restoreOutput` the system output is
+   * restored FIRST so audio has somewhere to go the instant CamillaDSP dies;
+   * without it (re-route paths) the output is already where the user listens.
+   */
+  private async _teardownDsp(opts: { restoreOutput: boolean }): Promise<void> {
+    this.stopping = true
+    this._clearDeviceInterval()
+    if (opts.restoreOutput) {
+      try {
+        await this._restoreOutput()
+      } catch {
+        /* tolerant */
+      }
     }
     if (this.client) {
       try {
@@ -575,14 +613,7 @@ export class Lifecycle extends EventEmitter {
     }
     this.client = null
     this.child = null
-    try {
-      await this._setState({ engaged: false })
-    } catch {
-      /* tolerant */
-    }
-    this.lastEvent = 'disengaged'
     this.stopping = false
-    return this.status()
   }
 
   // ── panic (best-effort, never throws, NOT mutex-gated) ───────────────────────
@@ -749,8 +780,14 @@ export class Lifecycle extends EventEmitter {
   }
 
   /**
-   * The 3s watchdog: if the device CamillaDSP plays to has vanished (e.g. the
-   * headphones were unplugged), disengage gracefully before audio glitches.
+   * The 3s watchdog, two hazards:
+   *  1. The device CamillaDSP plays to VANISHED (headphones unplugged) →
+   *     disengage gracefully before audio glitches.
+   *  2. The system output was STOLEN from the capture loopback (macOS
+   *     auto-switches the default output when a device is plugged in) → the EQ
+   *     chain is silently bypassed. Re-route to the thief device, since that
+   *     is where the user is now listening. A second theft inside the cooldown
+   *     means something else is managing audio — stop fighting and disengage.
    * Exposed (not private) so a test can drive it deterministically.
    */
   async _checkDeviceStillPresent(): Promise<void> {
@@ -766,12 +803,67 @@ export class Lifecycle extends EventEmitter {
         return // can't tell — leave it alone
       }
       if (!outs.includes(dev)) {
-        this.lastEvent = `playback device "${dev}" disappeared — disengaging`
+        // Set the reason AFTER disengage — it overwrites lastEvent internally.
         await this.disengage()
+        this.lastEvent = `playback device "${dev}" disappeared — disengaged`
+        this.emit('state', this._statusLite())
+        return
+      }
+
+      const thief = await this._outputStolen()
+      if (!thief) return
+      const now = Date.now()
+      if (now - this.lastRerouteAt < this.timing.rerouteCooldownMs) {
+        await this.disengage()
+        this.lastEvent = `system output keeps being switched away ("${thief}") — disengaged`
+        this.emit('state', this._statusLite())
+        return
+      }
+      this.lastRerouteAt = now
+      try {
+        await this._withLock(async () => {
+          // Re-verify under the lock: an engage/disengage may have raced us.
+          if (!this.state.engaged || this.stopping) return
+          const again = await this._outputStolen()
+          if (!again) return
+          await this._teardownDsp({ restoreOutput: false })
+          await this._engage(this.state.activePreset ?? undefined)
+          this.lastEvent = `re-routed EQ to "${again}" after system output was switched`
+          this.emit('state', this._statusLite())
+        })
+      } catch (e) {
+        // A failed re-engage is self-healed by the child-exit handler; just
+        // make the failure visible instead of letting it escape the interval.
+        this.lastEvent = `re-route after output switch failed: ${(e as Error).message}`
+        this.emit('state', this._statusLite())
       }
     } finally {
       this.deviceCheckRunning = false
     }
+  }
+
+  /**
+   * While engaged, the system output should be the capture loopback. Returns
+   * the device it was switched to instead ("the thief"), or null when all is
+   * well, undeterminable, or device switching is disabled.
+   */
+  private async _outputStolen(): Promise<string | null> {
+    if (!this.deviceSwitching) return null
+    let cur: string
+    try {
+      cur = await this.currentOutput()
+    } catch {
+      return null // can't tell — leave it alone
+    }
+    if (!cur || cur.toLowerCase().includes('blackhole')) return null
+    let capture = 'blackhole 2ch'
+    try {
+      capture = this._activeProfileOrThrow().captureDeviceName.toLowerCase()
+    } catch {
+      /* profile unavailable — the blackhole substring check above still guards */
+    }
+    if (cur.toLowerCase() === capture) return null
+    return cur
   }
 
   // ── low-level helpers ─────────────────────────────────────────────────────--

@@ -605,3 +605,77 @@ describe('status', () => {
     expect(status.devices.outputs).toEqual([])
   })
 })
+
+// ── output-theft watchdog (macOS auto-switches output when a device plugs in) ──
+describe('output theft', () => {
+  /** Engage on speakers, then simulate plugging in headphones: macOS adds the
+   *  device AND steals the default output to it — the real-world incident. */
+  async function engagedThenStolen() {
+    const h = await makeHarness({
+      current: 'MacBook Air Speakers',
+      outputs: ['BlackHole 2ch', 'MacBook Air Speakers'],
+    })
+    await h.lc.engage('mbdtf')
+    expect(h.exec.current).toBe('BlackHole 2ch') // chain is live
+    h.exec.outputs.push('External Headphones')
+    h.exec.current = 'External Headphones' // macOS auto-switch on plug-in
+    return h
+  }
+
+  it('watchdog re-routes the chain to the thief device', async () => {
+    const h = await engagedThenStolen()
+    await h.lc._checkDeviceStillPresent()
+
+    expect(h.children).toHaveLength(2) // old DSP torn down, new one spawned
+    expect(h.children[0].exitCode).not.toBeNull()
+    expect(h.exec.current).toBe('BlackHole 2ch') // output re-grabbed
+    const st = await readState(h.dataDir)
+    expect(st.engaged).toBe(true)
+    expect(st.lastRealOutput).toBe('External Headphones') // re-targeted
+    const yml = YAML.parse(await readFile(h.activeYml, 'utf-8'))
+    expect(yml.devices.playback.device).toBe('External Headphones')
+    expect((await h.lc.status()).lastEvent).toMatch(/re-routed EQ to "External Headphones"/)
+  })
+
+  it('a second theft within the cooldown disengages instead of fighting', async () => {
+    const h = await engagedThenStolen()
+    await h.lc._checkDeviceStillPresent() // first theft → re-route
+    h.exec.current = 'External Headphones' // stolen again immediately
+    await h.lc._checkDeviceStillPresent()
+
+    const st = await readState(h.dataDir)
+    expect(st.engaged).toBe(false)
+    expect((await h.lc.status()).lastEvent).toMatch(/keeps being switched away/)
+    expect(h.exec.current).not.toBe('BlackHole 2ch') // output left with the user
+  })
+
+  it('engage() while engaged with a stolen output does a full re-engage', async () => {
+    const h = await engagedThenStolen()
+    await h.lc.engage('mbdtf')
+
+    expect(h.children).toHaveLength(2)
+    expect(h.exec.current).toBe('BlackHole 2ch')
+    expect((await readState(h.dataDir)).lastRealOutput).toBe('External Headphones')
+  })
+
+  it('engage() while engaged with an intact chain only applies (no respawn)', async () => {
+    const h = await makeHarness()
+    await h.lc.engage('mbdtf')
+    const configsBefore = h.clients[0].setConfigs.length
+    await h.lc.engage('mbdtf')
+
+    expect(h.children).toHaveLength(1)
+    expect(h.clients[0].setConfigs.length).toBeGreaterThan(configsBefore)
+  })
+
+  it('theft detection is inert when deviceSwitching is off', async () => {
+    const h = await makeHarness({ deviceSwitching: false })
+    await h.lc.engage('mbdtf')
+    h.exec.current = 'External Headphones'
+    h.exec.outputs.push('External Headphones')
+    await h.lc._checkDeviceStillPresent()
+
+    expect(h.children).toHaveLength(1)
+    expect((await readState(h.dataDir)).engaged).toBe(true)
+  })
+})
