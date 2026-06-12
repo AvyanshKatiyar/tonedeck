@@ -1,0 +1,68 @@
+topics:
+  stack:
+    label: Stack
+    description: >
+      Technologies and services ToneDeck depends on — CamillaDSP binary, BlackHole
+      virtual audio, Fastify, React, Vite, Commander.js, Zod, the yaml npm package,
+      and vitest.
+
+  systems:
+    label: Systems
+    description: >
+      Custom subsystems built in this repo — Lifecycle, PresetStore, CdspClient,
+      SafetyRails, CamillaYaml emitter, Vibes engine, and MeterBroadcaster.
+
+  flows:
+    label: Flows
+    description: >
+      Multi-file processes end-to-end — the full audio chain from Mac output to
+      headphones, preset apply, engage/disengage, and install.
+
+  decisions:
+    label: Decisions
+    description: >
+      Architecture and design choices — what was chosen and why, including the
+      FIFO CdspClient queue, mutex serialization policy, hot-swap devices block,
+      and the AbandonProcessGroup LaunchAgent flag.
+
+  concepts:
+    label: Concepts
+    description: >
+      Shared vocabulary specific to ToneDeck — Preset, Profile, Band, Vibe,
+      hot-swap, bypass, provenance, and preset versioning.
+
+  audio:
+    label: Audio
+    description: >
+      Audio domain knowledge — RBJ biquad EQ math, the BlackHole loopback trap,
+      CoreAudio device routing, and CamillaDSP config format.
+
+  daemon:
+    label: Daemon
+    description: >
+      The Fastify HTTP+WebSocket daemon in packages/daemon — routes, dependency
+      injection, WebSocket meters, and SIGTERM behavior.
+
+  cli:
+    label: CLI
+    description: >
+      The Commander.js CLI in packages/cli — all commands, the ApiCtx injection
+      model, and the doctor diagnostic command.
+
+  ui:
+    label: UI
+    description: >
+      The React 19 / Vite 6 single-page app in packages/ui — store shape,
+      phases, the draft/base model, and meter WebSocket feed.
+
+  safety:
+    label: Safety
+    description: >
+      Gain clamping, headroom prediction, clip prevention, and the reject/warn/ok
+      verdict pipeline in packages/shared/src/safety.ts.
+
+  install:
+    label: Install
+    description: >
+      macOS LaunchAgent setup, Homebrew bin symlinks, and Claude Code skill
+      registration performed by scripts/install.sh.
