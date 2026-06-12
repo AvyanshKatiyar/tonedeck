@@ -80,8 +80,8 @@ export const LimitsSchema = z.object({
 export type Limits = z.infer<typeof LimitsSchema>
 
 export const ProfileSchema = z.object({
-  id: z.string(),
-  name: z.string(),
+  id: z.string().min(1, 'Profile id must not be empty'),
+  name: z.string().min(1, 'Profile name must not be empty'),
   playbackDeviceName: z.string().min(1),
   captureDeviceName: z.string().default('BlackHole 2ch'),
   bandTemplate: z.array(BandSchema),

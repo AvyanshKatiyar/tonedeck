@@ -61,6 +61,18 @@ describe('profile schema', () => {
     const profile = parseProfile(raw)
     expect(profile.captureDeviceName).toBe('BlackHole 2ch')
   })
+
+  it('rejects an empty id', () => {
+    const raw = loadFt1ProfileRaw() as Record<string, unknown>
+    raw.id = ''
+    expect(() => parseProfile(raw)).toThrow(/id must not be empty/i)
+  })
+
+  it('rejects an empty name', () => {
+    const raw = loadFt1ProfileRaw() as Record<string, unknown>
+    raw.name = ''
+    expect(() => parseProfile(raw)).toThrow(/name must not be empty/i)
+  })
 })
 
 describe('JSON-Schema export', () => {
