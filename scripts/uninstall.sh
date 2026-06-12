@@ -2,7 +2,7 @@
 # uninstall.sh — ToneDeck uninstaller.
 # Idempotent. Supports --dry-run. Preserves ~/.tonedeck data and the legacy system.
 #
-# NEVER touches: com.avyansh.ft1pro.camillagui.plist, legacy start/stop-ft1pro-eq.
+# Never touches unrelated audio tooling. Preserves ~/.tonedeck data.
 #
 # Usage:
 #   ./scripts/uninstall.sh            # live uninstall
@@ -23,8 +23,8 @@ for arg in "$@"; do
 done
 
 # ── paths ─────────────────────────────────────────────────────────────────────
-PLIST_LABEL="com.avyansh.tonedeck.daemon"
-PLIST_DEST="${HOME}/Library/LaunchAgents/com.avyansh.tonedeck.daemon.plist"
+PLIST_LABEL="com.tonedeck.daemon"
+PLIST_DEST="${HOME}/Library/LaunchAgents/com.tonedeck.daemon.plist"
 BIN_DIR="/opt/homebrew/bin"
 SKILL_LINK="${HOME}/.claude/skills/tonedeck-eq"
 
@@ -89,6 +89,6 @@ print ""
 print "Preserved (untouched):"
 print "  ~/.tonedeck/            — all data, state, logs, presets"
 print "  ~/camilladsp/           — legacy system (camilladsp config, logs)"
-print "  com.avyansh.ft1pro.camillagui.plist — CamillaGUI on :5005 (stays)"
+print "  any CamillaGUI LaunchAgent (stays — not ours)"
 print "  /opt/homebrew/bin/start-ft1pro-eq  — legacy panic path (stays)"
 print "  /opt/homebrew/bin/stop-ft1pro-eq   — legacy panic path (stays)"

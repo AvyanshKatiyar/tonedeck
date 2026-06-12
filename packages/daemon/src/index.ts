@@ -1,6 +1,6 @@
 // ToneDeck daemon — product port 5055, taken over from the retired legacy
 // album-switcher at install time. install.sh boots out
-// com.avyansh.ft1pro.album-switcher before starting this daemon.
+// any previous occupant of port 5055 before starting this daemon.
 // Override at runtime with TONEDECK_PORT.
 
 import { VERSION } from '@tonedeck/shared'

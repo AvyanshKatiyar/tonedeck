@@ -11,6 +11,7 @@
 
 import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { homedir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import YAML from 'yaml'
 import { parsePreset, parseProfile } from '@tonedeck/shared'
@@ -23,7 +24,7 @@ const SCRIPT_DIR = fileURLToPath(new URL('.', import.meta.url))
 const ROOT = join(SCRIPT_DIR, '..')
 const PRESETS_DIR = join(ROOT, 'presets', 'builtin')
 const PROFILES_DIR = join(ROOT, 'profiles')
-const LEGACY_CONFIGS_DIR = '/Users/avyanshkatiyar/camilladsp/configs'
+const LEGACY_CONFIGS_DIR = join(homedir(), 'camilladsp', 'configs')
 
 const CREATED_AT = '2026-06-12T00:00:00.000Z'
 const PREAMP = 2.0

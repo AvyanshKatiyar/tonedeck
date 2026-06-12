@@ -3,7 +3,9 @@
 # Idempotent. Each step is echoed. Supports --dry-run (prints what WOULD run,
 # executes nothing). Pass --no-build to skip npm install + build.
 #
-# NEVER touches: com.avyansh.ft1pro.camillagui.plist, legacy start/stop scripts.
+# Never touches unrelated audio tooling (e.g. a CamillaGUI LaunchAgent).
+# The plist is GENERATED here (not shipped) so node/repo paths resolve on the
+# installing machine. Homebrew prefix is detected (Apple Silicon vs Intel).
 #
 # Usage:
 #   ./scripts/install.sh              # live install
@@ -32,16 +34,19 @@ REPO_ROOT="${SCRIPT_DIR:h}"
 DAEMON_DIST="${REPO_ROOT}/packages/daemon/dist/index.js"
 CLI_DIST="${REPO_ROOT}/packages/cli/dist/index.js"
 PANIC_SRC="${SCRIPT_DIR}/tonedeck-panic"
-PLIST_SRC="${SCRIPT_DIR}/com.avyansh.tonedeck.daemon.plist"
-PLIST_LABEL="com.avyansh.tonedeck.daemon"
-PLIST_DEST="${HOME}/Library/LaunchAgents/com.avyansh.tonedeck.daemon.plist"
+PLIST_LABEL="com.tonedeck.daemon"
+PLIST_DEST="${HOME}/Library/LaunchAgents/${PLIST_LABEL}.plist"
+# Pre-rename install of this project (cleaned up if present).
+OLD_LABEL="com.avyansh.tonedeck.daemon"
+OLD_PLIST="${HOME}/Library/LaunchAgents/${OLD_LABEL}.plist"
+# Optional migration from the legacy FT1 Pro shell-script switcher (no-op elsewhere).
 LEGACY_PLIST="${HOME}/Library/LaunchAgents/com.avyansh.ft1pro.album-switcher.plist"
 LEGACY_LABEL="com.avyansh.ft1pro.album-switcher"
-BIN_DIR="/opt/homebrew/bin"
+BIN_DIR="$( [[ -d /opt/homebrew/bin ]] && print /opt/homebrew/bin || print /usr/local/bin )"
 DATA_DIR="${TONEDECK_DATA_DIR:-${HOME}/.tonedeck}"
 STATE_FILE="${DATA_DIR}/state.json"
 LEGACY_OUTPUT_FILE="${HOME}/camilladsp/last-real-output.txt"
-NODE="/opt/homebrew/bin/node"
+NODE="$(command -v node || print "${BIN_DIR}/node")"
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 step() { print -P "\n%F{cyan}[install] $*%f" }
@@ -117,19 +122,78 @@ run "chmod +x '${PANIC_DEST}'"
 step "6. Install Claude Code skill"
 run "'${SCRIPT_DIR}/install-skill.sh'"
 
-# ── Step 7: Boot out legacy album-switcher (frees port 5055) ──────────────────
-step "7. Boot out legacy album-switcher"
+# ── Step 7: Boot out anything else holding port 5055 ─────────────────────────
+step "7. Clear port 5055 occupants"
 if service_loaded "${LEGACY_LABEL}" || (( DRY_RUN )); then
-  print "  booting out ${LEGACY_LABEL} (frees port 5055)"
+  print "  booting out ${LEGACY_LABEL} (legacy switcher — frees port 5055)"
   run "launchctl bootout 'gui/$(id -u)' '${LEGACY_PLIST}' 2>/dev/null || true"
 else
-  print "  ${LEGACY_LABEL} not loaded — nothing to boot out"
+  print "  no legacy switcher loaded — nothing to boot out"
+fi
+if service_loaded "${OLD_LABEL}"; then
+  print "  migrating from old label ${OLD_LABEL}"
+  run "launchctl bootout 'gui/$(id -u)' '${OLD_PLIST}' 2>/dev/null || true"
+  run "rm -f '${OLD_PLIST}'"
 fi
 
-# ── Step 8: Install + boot daemon LaunchAgent ─────────────────────────────────
-step "8. Install and boot ToneDeck daemon"
-print "  copying plist: ${PLIST_SRC} → ${PLIST_DEST}"
-run "cp '${PLIST_SRC}' '${PLIST_DEST}'"
+# ── Step 8: Generate + boot daemon LaunchAgent ────────────────────────────────
+step "8. Generate and boot ToneDeck daemon LaunchAgent"
+print "  generating plist: ${PLIST_DEST}"
+print "    node:  ${NODE}"
+print "    entry: ${DAEMON_DIST}"
+if (( ! DRY_RUN )); then
+  cat > "${PLIST_DEST}" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>${PLIST_LABEL}</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>${NODE}</string>
+    <string>${DAEMON_DIST}</string>
+  </array>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>TONEDECK_PORT</key>
+    <string>5055</string>
+    <key>PATH</key>
+    <string>${BIN_DIR}:/usr/bin:/bin</string>
+  </dict>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+
+  <key>ThrottleInterval</key>
+  <integer>10</integer>
+
+  <!-- camilladsp is spawned detached and must outlive daemon restarts
+       (control plane down must not mean audio down). -->
+  <key>AbandonProcessGroup</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>${DATA_DIR}/logs/daemon.out.log</string>
+
+  <key>StandardErrorPath</key>
+  <string>${DATA_DIR}/logs/daemon.err.log</string>
+</dict>
+</plist>
+PLIST
+  plutil -lint "${PLIST_DEST}" >/dev/null
+else
+  print "  DRY-RUN: would generate plist with the values above"
+fi
 
 # Boot out any stale running instance first (idempotent)
 if service_loaded "${PLIST_LABEL}" || (( DRY_RUN )); then

@@ -49,14 +49,14 @@ tonedeck doctor
 The daemon may be down. Check:
 
 ```sh
-launchctl print gui/$(id -u)/com.avyansh.tonedeck.daemon
+launchctl print gui/$(id -u)/com.tonedeck.daemon
 tonedeck doctor
 ```
 
 To restart the daemon:
 
 ```sh
-launchctl kickstart -k gui/$(id -u)/com.avyansh.tonedeck.daemon
+launchctl kickstart -k gui/$(id -u)/com.tonedeck.daemon
 ```
 
 Then reload `http://127.0.0.1:5055`.

@@ -27,5 +27,12 @@
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
-  }
+  },
+  "description": "Per-album parametric EQ for macOS \u2014 CamillaDSP control plane with an art-forward UI, CLI, and a Claude Code skill for natural-language tuning",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/AvyanshKatiyar/tonedeck.git"
+  },
+  "author": "Avyansh Katiyar"
 }

@@ -6,15 +6,15 @@ Run this checklist with the user present, in order. Check each box before procee
 
 - [ ] FiiO FT1 Pro headphones are plugged in (External Headphones visible in System Settings → Sound)
 - [ ] Music is playing through headphones before you start
-- [ ] CamillaGUI is running (com.avyansh.ft1pro.camillagui on :5005)
-- [ ] Terminal open in `/Users/avyanshkatiyar/Desktop/tonedeck`
+- [ ] (optional, original dev machine) CamillaGUI is running on :5005
+- [ ] Terminal open in the tonedeck repo root
 
 ---
 
 ## Install
 
 - [ ] Run `./scripts/install.sh` — observe output, all steps echo without error
-- [ ] Step 7 says "booting out com.avyansh.ft1pro.album-switcher" (or "not loaded")
+- [ ] Step 7 cleared port 5055 (legacy switcher booted out, or nothing to do)
 - [ ] Step 8 boots the new daemon
 - [ ] `curl http://127.0.0.1:5055/api/health` returns `{"ok":true,...}`
 - [ ] `tonedeck doctor` shows all checks PASS (or known-OK skips)
