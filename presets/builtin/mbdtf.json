@@ -57,5 +57,9 @@
   },
   "version": 1,
   "createdAt": "2026-06-12T00:00:00.000Z",
-  "updatedAt": "2026-06-12T00:00:00.000Z"
+  "updatedAt": "2026-06-12T00:00:00.000Z",
+  "artwork": {
+    "itunesCollectionId": 1443160553,
+    "url": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/d1/74/da/d174dacf-5782-dfe2-19f7-ce037dcd0237/00602527584935.rgb.jpg/600x600bb.jpg"
+  }
 }
