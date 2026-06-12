@@ -5,8 +5,10 @@
 import { VERSION } from '@tonedeck/shared'
 import Fastify from 'fastify'
 import fastifyWebsocket from '@fastify/websocket'
+import fastifyStatic from '@fastify/static'
 import { fileURLToPath } from 'node:url'
 import { resolve, join } from 'node:path'
+import { existsSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { PresetStore } from './presets.js'
 import { Artwork } from './artwork.js'
@@ -76,6 +78,24 @@ export async function buildServer(opts: BuildServerOpts = {}) {
 
   await server.register(presetsPlugin, { store })
   await server.register(artworkPlugin, { store, artwork })
+
+  // ── Static UI (packages/ui/dist) ────────────────────────────────────────────
+  // Serve the built album-art UI from the repo root when it exists. The API
+  // routes above take precedence (explicit routes match first); a single-page
+  // notFound fallback returns index.html for non-API GETs so a refresh on `/`
+  // keeps working. Skipped entirely in dev (vite serves the UI + proxies /api).
+  const uiDist = join(REPO_ROOT, 'packages', 'ui', 'dist')
+  const uiIndex = join(uiDist, 'index.html')
+  const uiAvailable = existsSync(uiIndex)
+  if (uiAvailable) {
+    await server.register(fastifyStatic, { root: uiDist, prefix: '/', wildcard: false })
+    server.setNotFoundHandler((req, reply) => {
+      if (req.method === 'GET' && !req.url.startsWith('/api') && !req.url.startsWith('/ws')) {
+        return reply.type('text/html').sendFile('index.html')
+      }
+      return reply.status(404).send({ error: `Route ${req.method} ${req.url} not found` })
+    })
+  }
 
   // ── Audio control plane (lifecycle + live meters + ws) ──────────────────────
   const lifecycleEnabled = opts.lifecycle ?? true

@@ -67,8 +67,24 @@ function pickBest(title: string, results: ArtworkResult[]): ArtworkResult | unde
   return contains ?? undefined
 }
 
+/** Parse `--only <slug>` from argv (restrict the run to a single preset). */
+function parseOnly(): string | undefined {
+  const i = process.argv.indexOf('--only')
+  if (i !== -1 && process.argv[i + 1]) return process.argv[i + 1]
+  return undefined
+}
+
 async function run() {
-  const files = (await fs.readdir(BUILTIN_DIR)).filter((f) => f.endsWith('.json')).sort()
+  const only = parseOnly()
+  let files = (await fs.readdir(BUILTIN_DIR)).filter((f) => f.endsWith('.json')).sort()
+  if (only) {
+    files = files.filter((f) => f === `${only}.json`)
+    if (files.length === 0) {
+      console.error(`--only "${only}": no builtin preset ${only}.json`)
+      process.exit(1)
+    }
+    console.log(`Restricting to --only ${only}`)
+  }
 
   const rows: RowResult[] = []
   let firstRequest = true

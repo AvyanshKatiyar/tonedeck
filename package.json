@@ -2,8 +2,12 @@
   "name": "tonedeck",
   "private": true,
   "type": "module",
-  "workspaces": ["packages/*"],
-  "engines": { "node": ">=22" },
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "npm run build -w packages/shared && npm run build -w packages/daemon && npm run build -w packages/cli && npm run build -w packages/ui",
     "test": "vitest run",
@@ -12,10 +16,12 @@
     "migrate:kanye": "tsx scripts/migrate-kanye.ts",
     "smoke:cdsp": "node scripts/smoke/cdsp-ws-smoke.mjs",
     "smoke:control": "node scripts/smoke/control-smoke.mjs",
+    "smoke:ui": "node scripts/smoke/ui-smoke.mjs",
     "backfill:artwork": "tsx scripts/backfill-artwork.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "playwright-core": "^1.60.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
