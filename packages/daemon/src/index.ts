@@ -4,13 +4,17 @@
 
 import { VERSION } from '@tonedeck/shared'
 import Fastify from 'fastify'
+import fastifyWebsocket from '@fastify/websocket'
 import { fileURLToPath } from 'node:url'
 import { resolve, join } from 'node:path'
 import { homedir } from 'node:os'
 import { PresetStore } from './presets.js'
 import { Artwork } from './artwork.js'
+import { Lifecycle } from './lifecycle.js'
+import { MeterBroadcaster } from './meters.js'
 import presetsPlugin from './routes/presets.js'
 import artworkPlugin from './routes/artwork.js'
+import controlPlugin from './routes/control.js'
 
 /**
  * Repo root resolved relative to this file so the path works from both
@@ -34,6 +38,21 @@ export interface BuildServerOpts {
   _store?: PresetStore
   /** Inject a pre-constructed Artwork module (tests only). */
   _artwork?: Artwork
+  /** Mount the audio control plane + meters (default true). */
+  lifecycle?: boolean
+  /** CamillaDSP websocket port the lifecycle drives (default 1234). */
+  cdspPort?: number
+  /** Allow real `SwitchAudioSource -s` device switching (default true). */
+  deviceSwitching?: boolean
+  /** Inject a pre-constructed Lifecycle (tests only — skips reconcile()). */
+  _lifecycle?: Lifecycle
+  /** Inject a pre-constructed MeterBroadcaster (tests only). */
+  _meters?: MeterBroadcaster
+}
+
+export interface ToneDeckServer {
+  lifecycle: Lifecycle | null
+  meters: MeterBroadcaster | null
 }
 
 export async function buildServer(opts: BuildServerOpts = {}) {
@@ -58,16 +77,64 @@ export async function buildServer(opts: BuildServerOpts = {}) {
   await server.register(presetsPlugin, { store })
   await server.register(artworkPlugin, { store, artwork })
 
+  // ── Audio control plane (lifecycle + live meters + ws) ──────────────────────
+  const lifecycleEnabled = opts.lifecycle ?? true
+  const handle: ToneDeckServer = { lifecycle: null, meters: null }
+
+  if (lifecycleEnabled) {
+    const lifecycle =
+      opts._lifecycle ??
+      new Lifecycle({
+        store,
+        dataDir,
+        cdspPort: opts.cdspPort,
+        deviceSwitching: opts.deviceSwitching,
+      })
+    const meters = opts._meters ?? new MeterBroadcaster({ lifecycle })
+
+    // Re-adopt or clear whatever audio state a prior daemon left behind. Never
+    // auto-spawns; never grabs audio on boot.
+    if (!opts._lifecycle) await lifecycle.reconcile()
+
+    await server.register(fastifyWebsocket)
+    await server.register(controlPlugin, { lifecycle })
+    server.get('/ws', { websocket: true }, (socket) => {
+      meters.addSocket(socket)
+    })
+
+    handle.lifecycle = lifecycle
+    handle.meters = meters
+  }
+
+  // Expose the audio handles for direct-run shutdown (and tests).
+  ;(server as typeof server & { tonedeck: ToneDeckServer }).tonedeck = handle
+
   return server
 }
 
 // Only bind when executed directly — not when imported by tests or other packages.
-const isMain =
-  resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1] ?? '')
+const isMain = resolve(fileURLToPath(import.meta.url)) === resolve(process.argv[1] ?? '')
 
 if (isMain) {
   const port = Number(process.env.TONEDECK_PORT ?? 5056)
   const server = await buildServer()
   await server.listen({ host: '127.0.0.1', port })
   console.log(`tonedeck daemon listening on http://127.0.0.1:${port}`)
+
+  // SIGTERM/SIGINT: tear down the control plane only. We deliberately do NOT
+  // disengage — the control plane going down does not mean audio should stop;
+  // CamillaDSP keeps playing and reconcile() re-adopts it on the next boot.
+  const shutdown = async (signal: string): Promise<void> => {
+    console.log(`tonedeck daemon received ${signal} — closing control plane (audio left running)`)
+    const handle = (server as typeof server & { tonedeck?: ToneDeckServer }).tonedeck
+    handle?.meters?.close()
+    try {
+      await server.close()
+    } catch {
+      /* ignore */
+    }
+    process.exit(0)
+  }
+  process.on('SIGTERM', () => void shutdown('SIGTERM'))
+  process.on('SIGINT', () => void shutdown('SIGINT'))
 }

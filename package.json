@@ -11,6 +11,7 @@
     "dev:daemon": "npm run build -w packages/shared && tsx watch packages/daemon/src/index.ts",
     "migrate:kanye": "tsx scripts/migrate-kanye.ts",
     "smoke:cdsp": "node scripts/smoke/cdsp-ws-smoke.mjs",
+    "smoke:control": "node scripts/smoke/control-smoke.mjs",
     "backfill:artwork": "tsx scripts/backfill-artwork.ts"
   },
   "devDependencies": {

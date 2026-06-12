@@ -69,6 +69,7 @@ beforeEach(async () => {
       artworkCacheDir: artworkDir,
     },
     _artwork: makeFakeArtwork(artworkDir),
+    lifecycle: false, // these tests cover preset/artwork routes only — no audio plane
   })
 })
 
