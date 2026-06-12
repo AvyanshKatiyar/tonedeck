@@ -4,7 +4,8 @@ Per-album (and per-song) parametric EQ for macOS — for people who don't know w
 
 A local daemon drives [CamillaDSP](https://github.com/HEnquist/camilladsp) over its websocket API; a dark, album-art-forward web UI switches EQ presets glitch-free with one click; and a bundled [Claude Code](https://claude.com/claude-code) skill lets you tune by talking: *"tune All of the Lights"*, *"this sounds harsh"*, *"make it warmer"*, *"go back to the original"*.
 
-![ToneDeck UI](docs/screenshot.png)
+
+<img width="3420" height="2188" alt="image" src="https://github.com/user-attachments/assets/03c2adf1-7532-4eb9-976a-31ff76eca1fc" />
 
 ## Features
 
