@@ -17,6 +17,7 @@
     "smoke:cdsp": "node scripts/smoke/cdsp-ws-smoke.mjs",
     "smoke:control": "node scripts/smoke/control-smoke.mjs",
     "smoke:ui": "node scripts/smoke/ui-smoke.mjs",
+    "smoke:skill": "node scripts/smoke/skill-smoke.mjs",
     "backfill:artwork": "tsx scripts/backfill-artwork.ts"
   },
   "devDependencies": {
