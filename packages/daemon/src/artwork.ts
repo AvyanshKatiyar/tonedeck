@@ -25,7 +25,12 @@ export interface ArtworkResult {
   collectionName: string
   artworkUrl100: string
   artworkUrl600: string
+  /** Present for entity=song results. */
+  trackId?: number
+  trackName?: string
 }
+
+export type SearchEntity = 'album' | 'song'
 
 // Loose fetch shape so tests inject simple fakes without needing exact global types.
 export type FetchLike = (
@@ -54,9 +59,9 @@ export class Artwork {
     this.fetchImpl = opts.fetchImpl ?? (globalThis.fetch as unknown as FetchLike)
   }
 
-  /** Search iTunes for albums matching `term`. Returns up to 8 results. */
-  async search(term: string): Promise<ArtworkResult[]> {
-    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=album&limit=8&media=music`
+  /** Search iTunes for albums or songs matching `term`. Returns up to 8 results. */
+  async search(term: string, entity: SearchEntity = 'album'): Promise<ArtworkResult[]> {
+    const url = `https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=${entity}&limit=8&media=music`
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), 5000)
     let res: { ok: boolean; status: number; json(): Promise<unknown> }
@@ -78,6 +83,8 @@ export class Artwork {
       artworkUrl100: r.artworkUrl100 as string,
       // iTunes artworkUrl100 ends like "/100x100bb.jpg"; swap to 600.
       artworkUrl600: (r.artworkUrl100 as string).replace('100x100', '600x600'),
+      trackId: r.trackId as number | undefined,
+      trackName: r.trackName as string | undefined,
     }))
   }
 

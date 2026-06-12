@@ -34,6 +34,9 @@ export interface ArtworkResult {
   collectionName: string
   artworkUrl100: string
   artworkUrl600: string
+  /** Present for song searches. */
+  trackId?: number
+  trackName?: string
 }
 
 export interface ApplyResponse {

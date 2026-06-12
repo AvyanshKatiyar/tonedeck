@@ -87,10 +87,10 @@ export const api = {
       body: JSON.stringify({ preset, change, reason }),
     }),
 
-  searchArtwork: (term: string) =>
-    req<{ results: ArtworkResult[] }>(`/api/artwork/search?term=${encodeURIComponent(term)}`).then(
-      (r) => r.results,
-    ),
+  searchArtwork: (term: string, entity: 'album' | 'song' = 'album') =>
+    req<{ results: ArtworkResult[] }>(
+      `/api/artwork/search?term=${encodeURIComponent(term)}&entity=${entity}`,
+    ).then((r) => r.results),
 
   /** URL for an album's cached artwork (404 → caller shows a fallback tile). */
   artworkUrl: (slug: string) => `/api/artwork/${slug}`,

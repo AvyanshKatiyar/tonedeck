@@ -948,3 +948,49 @@ button {
   font-size: 12px;
   color: var(--muted);
 }
+
+/* ── Add modal: album/song mode toggle ───────────────────────────────────── */
+.modal__modes {
+  display: flex;
+  gap: 8px;
+  padding: 0 16px 10px;
+}
+.mode-chip {
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 4px 14px;
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms, background 150ms;
+}
+.mode-chip:hover {
+  color: var(--text);
+}
+.mode-chip--on {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(212, 162, 89, 0.08);
+}
+
+/* ── Song badge on grid cards ────────────────────────────────────────────── */
+.card__kind {
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid rgba(212, 162, 89, 0.45);
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: 7px;
+  vertical-align: 2px;
+}
+
+/* ── Drawer: reset-to-original ───────────────────────────────────────────── */
+.drawer__resetoriginal {
+  margin-top: 12px;
+  width: 100%;
+}

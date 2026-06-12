@@ -20,12 +20,12 @@ const artworkPlugin: FastifyPluginAsync<ArtworkPluginOpts> = async (
   { store, artwork },
 ) => {
   fastify.get('/api/artwork/search', async (req, reply) => {
-    const { term } = req.query as { term?: string }
+    const { term, entity } = req.query as { term?: string; entity?: string }
     if (!term?.trim()) {
       return reply.status(400).send({ error: 'Query param "term" is required' })
     }
     try {
-      const results = await artwork.search(term)
+      const results = await artwork.search(term, entity === 'song' ? 'song' : 'album')
       return { results }
     } catch (e) {
       if (e instanceof ArtworkError) {

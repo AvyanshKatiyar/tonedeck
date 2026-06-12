@@ -1,8 +1,9 @@
 /**
- * AddAlbumModal — search iTunes (debounced 400ms), pick a result, confirm an
- * editable slug, and POST a starter preset built from the profile's band
- * template (flat gains, preamp 2). On success the card appears and a toast
- * nudges the user to ask Claude Code to tune it.
+ * AddAlbumModal — search iTunes for an album OR a song (debounced 400ms), pick
+ * a result, confirm an editable slug, and POST a starter preset built from the
+ * profile's band template (flat gains, preamp 2). Songs become kind:"track"
+ * presets slugged `track-...`. On success the card appears and a toast nudges
+ * the user to ask Claude Code to tune it.
  */
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
@@ -23,6 +24,7 @@ export function kebab(title: string): string {
 
 export function AddAlbumModal() {
   const { state, actions } = useStore()
+  const [mode, setMode] = useState<'album' | 'song'>('album')
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<ArtworkResult[]>([])
   const [searching, setSearching] = useState(false)
@@ -41,7 +43,7 @@ export function AddAlbumModal() {
     setSearching(true)
     timer.current = setTimeout(async () => {
       try {
-        setResults(await api.searchArtwork(query))
+        setResults(await api.searchArtwork(query, mode))
       } catch (e) {
         actions.toast(e instanceof Error ? e.message : 'search failed', 'error')
       } finally {
@@ -51,27 +53,33 @@ export function AddAlbumModal() {
     return () => {
       if (timer.current) clearTimeout(timer.current)
     }
-  }, [query, actions])
+  }, [query, mode, actions])
 
   const pick = (r: ArtworkResult) => {
     setSelected(r)
-    setSlug(kebab(r.collectionName))
+    setSlug(
+      mode === 'song' && r.trackName ? `track-${kebab(r.trackName)}` : kebab(r.collectionName),
+    )
   }
 
   const create = async () => {
     if (!selected || !state.profile) return
     setCreating(true)
+    const isSong = mode === 'song' && !!selected.trackName
+    const title = isSong ? selected.trackName! : selected.collectionName
     const now = new Date().toISOString()
     const preset: Preset = {
       schemaVersion: 1,
       slug,
-      kind: 'album',
-      title: selected.collectionName,
+      kind: isSong ? 'track' : 'album',
+      title,
       artist: selected.artistName,
       profile: state.profile.id,
       preamp: 2,
       bands: state.profile.bandTemplate.map((b) => ({ ...b, gain: 0 })),
-      intent: 'starter preset — ask Claude to tune it',
+      intent: isSong
+        ? `starter song preset (from ${selected.collectionName}) — ask Claude to tune it`
+        : 'starter preset — ask Claude to tune it',
       provenance: { createdBy: 'user', history: [] },
       artwork: { itunesCollectionId: selected.collectionId, url: selected.artworkUrl600 },
       version: 1,
@@ -81,7 +89,7 @@ export function AddAlbumModal() {
     try {
       await api.create(preset)
       await actions.refreshPresets()
-      actions.toast(`Now ask Claude Code: "tune ${selected.collectionName} for my headphones"`, 'info')
+      actions.toast(`Now ask Claude Code: "tune ${title} for my headphones"`, 'info')
       close()
     } catch (e) {
       actions.toast(e instanceof Error ? e.message : 'create failed', 'error')
@@ -102,7 +110,7 @@ export function AddAlbumModal() {
     <div className="modal-backdrop" onClick={close}>
       <div className="modal" role="dialog" aria-label="Add an album" onClick={(e) => e.stopPropagation()}>
         <header className="modal__head">
-          <h2>Add an album</h2>
+          <h2>Add {mode === 'album' ? 'an album' : 'a song'}</h2>
           <button type="button" className="drawer__close" onClick={close} aria-label="Close">
             ×
           </button>
@@ -110,11 +118,32 @@ export function AddAlbumModal() {
 
         {!selected ? (
           <>
+            <div className="modal__modes" role="tablist" aria-label="Search type">
+              {(['album', 'song'] as const).map((m) => (
+                <button
+                  key={m}
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === m}
+                  className={`mode-chip ${mode === m ? 'mode-chip--on' : ''}`}
+                  onClick={() => {
+                    setMode(m)
+                    setResults([])
+                  }}
+                >
+                  {m === 'album' ? 'Album' : 'Song'}
+                </button>
+              ))}
+            </div>
             <input
               className="modal__search"
               type="text"
               autoFocus
-              placeholder="Search albums — e.g. 'Frank Ocean Blonde'"
+              placeholder={
+                mode === 'album'
+                  ? "Search albums — e.g. 'Frank Ocean Blonde'"
+                  : "Search songs — e.g. 'All of the Lights'"
+              }
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
@@ -124,11 +153,19 @@ export function AddAlbumModal() {
                 <div className="modal__hint">No matches.</div>
               )}
               {results.map((r) => (
-                <button type="button" key={r.collectionId} className="result-row" onClick={() => pick(r)}>
+                <button
+                  type="button"
+                  key={r.trackId ?? r.collectionId}
+                  className="result-row"
+                  onClick={() => pick(r)}
+                >
                   <img className="result-row__art" src={r.artworkUrl100} alt="" draggable={false} />
                   <span className="result-row__meta">
-                    <span className="result-row__album">{r.collectionName}</span>
-                    <span className="result-row__artist">{r.artistName}</span>
+                    <span className="result-row__album">{r.trackName ?? r.collectionName}</span>
+                    <span className="result-row__artist">
+                      {r.artistName}
+                      {r.trackName ? ` · ${r.collectionName}` : ''}
+                    </span>
                   </span>
                 </button>
               ))}
@@ -139,8 +176,11 @@ export function AddAlbumModal() {
             <div className="modal__picked">
               <img className="result-row__art" src={selected.artworkUrl600} alt="" draggable={false} />
               <div>
-                <div className="result-row__album">{selected.collectionName}</div>
-                <div className="result-row__artist">{selected.artistName}</div>
+                <div className="result-row__album">{selected.trackName ?? selected.collectionName}</div>
+                <div className="result-row__artist">
+                  {selected.artistName}
+                  {selected.trackName ? ` · ${selected.collectionName}` : ''}
+                </div>
               </div>
             </div>
             <label className="modal__slug">

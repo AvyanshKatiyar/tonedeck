@@ -52,6 +52,7 @@ export function AlbumCard({
         <div className="card__text">
           <div className="card__title" title={preset.title}>
             {preset.title}
+            {preset.kind === 'track' && <span className="card__kind">song</span>}
           </div>
           <div className="card__artist">{preset.artist ?? '—'}</div>
         </div>
