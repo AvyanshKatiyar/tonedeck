@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "dev:daemon": "npm run build -w packages/shared && tsx watch packages/daemon/src/index.ts",
-    "migrate:kanye": "tsx scripts/migrate-kanye.ts"
+    "migrate:kanye": "tsx scripts/migrate-kanye.ts",
+    "smoke:cdsp": "node scripts/smoke/cdsp-ws-smoke.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
