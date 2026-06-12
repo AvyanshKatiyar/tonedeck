@@ -35,12 +35,18 @@ const fmt = (n: number, signed = false) =>
 
 export function PresetDrawer() {
   const { state, actions } = useStore()
-  const { drawerSlug, base, draft } = state
+  const { drawerSlug, base, draft, status } = state
   const [reason, setReason] = useState('')
   const [advanced, setAdvanced] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
-  // Reset the reason field whenever a different preset is opened.
-  useEffect(() => setReason(''), [drawerSlug])
+  // Reset transient state whenever a different preset is opened.
+  useEffect(() => {
+    setReason('')
+    setConfirmDelete(false)
+  }, [drawerSlug])
+
+  const isActive = !!status?.engaged && status?.activePreset === drawerSlug
 
   if (!drawerSlug || !base || !draft) return null
 
@@ -119,6 +125,25 @@ export function PresetDrawer() {
                   Reset to original
                 </button>
               )}
+              <button
+                type="button"
+                className={`btn btn--danger drawer__delete ${confirmDelete ? 'btn--danger-armed' : ''}`}
+                disabled={isActive}
+                title={
+                  isActive
+                    ? 'This preset is playing — switch to another before deleting'
+                    : 'Remove this preset from your library'
+                }
+                onClick={() => {
+                  if (!confirmDelete) {
+                    setConfirmDelete(true)
+                    return
+                  }
+                  void actions.deletePreset()
+                }}
+              >
+                {confirmDelete ? 'Click again to delete' : 'Delete preset'}
+              </button>
               {history.length > 0 && (
                 <div className="provenance">
                   <div className="provenance__head">Recent changes</div>

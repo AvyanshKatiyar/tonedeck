@@ -76,6 +76,7 @@ export const api = {
   preview: (preset: Preset) => req<{ ok: true }>('/api/preview', json({ preset })),
 
   create: (preset: Preset) => req<MutationResponse>('/api/presets', json({ preset })),
+  remove: (slug: string) => req<null>(`/api/presets/${slug}`, { method: 'DELETE' }),
   revertOriginal: (slug: string) =>
     req<MutationResponse & { revertedTo: string }>(
       `/api/presets/${slug}/revert`,

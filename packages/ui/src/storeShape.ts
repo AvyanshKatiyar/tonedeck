@@ -118,6 +118,7 @@ export interface Actions {
   preview: (draft: Preset) => Promise<void>
   save: (change: string, reason: string) => Promise<void>
   resetOriginal: () => Promise<void>
+  deletePreset: () => Promise<void>
   setAddOpen: (open: boolean) => void
   ackClip: () => void
 }

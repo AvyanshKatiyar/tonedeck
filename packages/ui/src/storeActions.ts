@@ -138,6 +138,23 @@ export function createActions(
         fail(e)
       }
     },
+    deletePreset: async () => {
+      const { drawerSlug, status } = ref.current
+      if (!drawerSlug) return
+      // Guard duplicated from the UI: never delete what's currently playing.
+      if (status?.engaged && status.activePreset === drawerSlug) {
+        toast('Switch presets before deleting the active one', 'warn')
+        return
+      }
+      try {
+        await api.remove(drawerSlug)
+        dispatch({ t: 'drawerClose' })
+        toast('Preset deleted', 'info')
+        await refreshPresets()
+      } catch (e) {
+        fail(e)
+      }
+    },
     setAddOpen: (open) => dispatch({ t: 'add', open }),
     ackClip: () => dispatch({ t: 'clipAck', value: ref.current.status?.clippedSamples ?? 0 }),
   }
