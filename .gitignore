@@ -9,3 +9,6 @@ dist
 .almanac/index.db-wal
 .almanac/index.db-shm
 .almanac/runs/
+
+# Visual-companion brainstorming scratch
+.superpowers/
