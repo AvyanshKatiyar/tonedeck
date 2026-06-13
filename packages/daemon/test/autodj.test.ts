@@ -75,6 +75,19 @@ describe('AutoDJ', () => {
     expect(lc.applied).toContain('nas-lifes-a-bitch')
   })
 
+  it('backs off generation after a failure (no retry storm)', async () => {
+    const lc = fakeLifecycle()
+    const gen = vi.fn().mockRejectedValue(new Error('timeout'))
+    const dj = new AutoDJ({ lifecycle: lc as any, store: store([]) as any, nowPlaying: async () => tracks.ny, generate: gen as any, debounceMs: 0, genCooldownMs: 60_000 })
+    dj.arm()
+    await dj.tick(1000); await dj.tick(1000)   // first new track -> generate attempted -> fails -> cooldown
+    expect(gen).toHaveBeenCalledTimes(1)
+    await dj.tick(1000); await dj.tick(1000)   // within cooldown -> must NOT respawn generation
+    expect(gen).toHaveBeenCalledTimes(1)
+    await dj.tick(70_000)                       // past cooldown -> one retry allowed
+    expect(gen).toHaveBeenCalledTimes(2)
+  })
+
   it('does not re-apply the same track repeatedly', async () => {
     const lc = fakeLifecycle()
     const dj = new AutoDJ({ lifecycle: lc as any, store: store(['nas-ny-state']) as any, nowPlaying: async () => tracks.ny, generate: vi.fn(), debounceMs: 0 })

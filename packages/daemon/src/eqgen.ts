@@ -70,7 +70,7 @@ function extractJson(raw: string): unknown {
 
 export async function generateTrackEq(track: TrackMeta, profile: Profile, opts: GenerateOpts): Promise<Preset> {
   const exec = opts.exec ?? defaultExec
-  const timeoutMs = opts.timeoutMs ?? 30_000
+  const timeoutMs = opts.timeoutMs ?? 90_000
   let out: string
   try { out = await exec(buildPrompt(track, profile), timeoutMs) }
   catch (e) { throw new EqGenError(`claude CLI failed: ${(e as Error).message}`) }

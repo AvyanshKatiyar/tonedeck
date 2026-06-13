@@ -21,6 +21,8 @@ export interface AutoDJOpts {
   generate: (track: NowPlaying, profile: Profile, opts: { slug: string }) => Promise<Preset>
   debounceMs?: number
   maxGenPerHour?: number
+  /** After a failed/timed-out generation, don't re-attempt that track for this long. */
+  genCooldownMs?: number
   onAuto?: (e: { mode: AutoMode; generating?: boolean; track?: NowPlaying }) => void
 }
 
@@ -34,11 +36,13 @@ export class AutoDJ extends EventEmitter {
   private inFlight = new Set<number>()
   private ticking = false
   private genTimestamps: number[] = []
-  private readonly o: AutoDJOpts & { debounceMs: number; maxGenPerHour: number }
+  /** trackId -> earliest timestamp at which generation may be re-attempted (post-failure backoff). */
+  private genCooldownUntil = new Map<number, number>()
+  private readonly o: AutoDJOpts & { debounceMs: number; maxGenPerHour: number; genCooldownMs: number }
 
   constructor(opts: AutoDJOpts) {
     super()
-    this.o = { debounceMs: 4000, maxGenPerHour: 30, ...opts }
+    this.o = { debounceMs: 4000, maxGenPerHour: 30, genCooldownMs: 60_000, ...opts }
     opts.lifecycle.on('applied', ({ slug }: { slug: string }) => {
       if (this.mode === 'armed' && slug !== this.initiatedSlug) this.setMode('yielded')
     })
@@ -97,7 +101,10 @@ export class AutoDJ extends EventEmitter {
     let slug: string | null = null
     if (this.o.store.getPreset(trackSlug)) slug = trackSlug
     else if (np.album && this.o.store.getPreset(albumSlug)) slug = albumSlug
-    else slug = await this.generateAndStore(np, profile, trackSlug, now)
+    else if (np.trackId != null && (this.genCooldownUntil.get(np.trackId) ?? 0) > now) {
+      // generation recently failed for this track — back off so we don't respawn claude every tick
+      slug = this.albumFallback(np)
+    } else slug = await this.generateAndStore(np, profile, trackSlug, now)
 
     if (!slug) return
     this.initiatedSlug = slug
@@ -122,6 +129,8 @@ export class AutoDJ extends EventEmitter {
       this.genTimestamps.push(now)
       return slug
     } catch {
+      // back off this track so a slow/failing generation can't respawn every poll tick
+      if (np.trackId != null) this.genCooldownUntil.set(np.trackId, now + this.o.genCooldownMs)
       return this.albumFallback(np) // album preset, otherwise null (keep current EQ)
     } finally {
       if (np.trackId != null) this.inFlight.delete(np.trackId)
