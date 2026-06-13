@@ -64,14 +64,15 @@ export function groupByArtist(presets: PresetSummary[], query: string): ArtistGr
   for (const p of presets) {
     if (!hit(p)) continue
     const artist = p.artist?.trim() || 'Unknown Artist'
-    const albumName = (p.kind === 'album' ? p.title : p.album) || p.title
+    const albumName = (p.kind === 'album' ? p.title : p.album?.trim()) || p.title
     const albums = byArtist.get(artist) ?? new Map<string, AlbumDeck>()
     byArtist.set(artist, albums)
     const deck = albums.get(albumName) ?? { album: albumName, albumSlug: null, songs: [] }
     if (p.kind === 'album') {
       deck.albumPreset = p
       deck.albumSlug = p.slug
-      deck.artwork = p.artwork
+      // album art is authoritative when present, but don't erase track-sourced art
+      deck.artwork = p.artwork ?? deck.artwork
     } else {
       deck.songs.push(p)
       if (!deck.artwork) deck.artwork = p.artwork
