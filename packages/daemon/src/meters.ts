@@ -54,7 +54,9 @@ export class MeterBroadcaster {
     this.intervalMs = opts.intervalMs ?? 100
     this.lifecycle.on('state', (payload) => this._relay('state', payload))
     this.lifecycle.on('applied', (payload) => this._relay('applied', payload))
-    opts.autoSource?.on('auto', (payload) => this._broadcast({ type: 'auto', ...(payload as object) }))
+    opts.autoSource?.on('auto', (payload) =>
+      this._broadcast({ type: 'auto', ...(payload && typeof payload === 'object' ? payload : {}) }),
+    )
   }
 
   /** Register a socket and start polling if this is the first one. */
