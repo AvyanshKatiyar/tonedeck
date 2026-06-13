@@ -15,10 +15,24 @@ export type GenExec = (prompt: string, timeoutMs: number) => Promise<string>
 
 const defaultExec: GenExec = (prompt, timeoutMs) =>
   new Promise((resolve, reject) => {
+    // The daemon runs under launchd with a minimal PATH (/opt/homebrew/bin:/usr/bin:/bin),
+    // which usually does NOT include the Claude CLI (e.g. ~/.local/bin/claude). Prepend the
+    // common user-bin locations so `claude` resolves regardless of launch context, and allow
+    // an explicit override via TONEDECK_CLAUDE_BIN.
+    const home = process.env.HOME ?? ''
+    const PATH = [
+      `${home}/.local/bin`,
+      '/opt/homebrew/bin',
+      '/usr/local/bin',
+      process.env.PATH ?? '',
+    ]
+      .filter(Boolean)
+      .join(':')
+    const bin = process.env.TONEDECK_CLAUDE_BIN || 'claude'
     execFile(
-      'claude',
+      bin,
       ['-p', '--model', 'sonnet', prompt],
-      { timeout: timeoutMs, env: { ...process.env, MAX_THINKING_TOKENS: '0' }, maxBuffer: 1 << 20 },
+      { timeout: timeoutMs, env: { ...process.env, MAX_THINKING_TOKENS: '0', PATH }, maxBuffer: 1 << 20 },
       (err, stdout) => (err ? reject(err) : resolve(stdout.toString())),
     )
   })
