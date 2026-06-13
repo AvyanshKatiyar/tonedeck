@@ -263,6 +263,40 @@ describe('GET /api/profiles/:id', () => {
   })
 })
 
+// ── POST /api/optimize-preamp ────────────────────────────────────────────────
+
+describe('POST /api/optimize-preamp', () => {
+  it('returns 422 when targetPreamp is missing', async () => {
+    const res = await server.inject({
+      method: 'POST',
+      url: '/api/optimize-preamp',
+      payload: { preset: presetBody() },
+    })
+    expect(res.statusCode).toBe(422)
+    expect(res.json().error).toBe('targetPreamp must be a number')
+  })
+
+  it('returns 422 when targetPreamp is a string', async () => {
+    const res = await server.inject({
+      method: 'POST',
+      url: '/api/optimize-preamp',
+      payload: { preset: presetBody(), targetPreamp: '-3' },
+    })
+    expect(res.statusCode).toBe(422)
+    expect(res.json().error).toBe('targetPreamp must be a number')
+  })
+
+  it('returns 422 when preset is invalid', async () => {
+    const res = await server.inject({
+      method: 'POST',
+      url: '/api/optimize-preamp',
+      payload: { preset: { schemaVersion: 1, slug: 'bad' }, targetPreamp: -3 },
+    })
+    expect(res.statusCode).toBe(422)
+    expect(typeof res.json().error).toBe('string')
+  })
+})
+
 // ── GET /api/artwork/search ───────────────────────────────────────────────────
 
 describe('GET /api/artwork/search', () => {

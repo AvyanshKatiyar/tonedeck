@@ -39,6 +39,8 @@ const defaultExec: GenExec = (prompt, timeoutMs) =>
 
 export interface GenerateOpts { slug: string; exec?: GenExec; timeoutMs?: number }
 
+export interface OptimizeOpts { exec?: GenExec; timeoutMs?: number }
+
 function buildPrompt(track: TrackMeta, profile: Profile): string {
   const [gLo, gHi] = profile.limits.bandGainDb
   const [pLo, pHi] = profile.limits.preampDb
@@ -66,6 +68,58 @@ function extractJson(raw: string): unknown {
   try { return JSON.parse(body.slice(start, end + 1)) } catch (e) {
     throw new EqGenError(`model output was not valid JSON: ${(e as Error).message}`)
   }
+}
+
+function buildOptimizePrompt(preset: Preset, targetPreamp: number, profile: Profile): string {
+  const [gLo, gHi] = profile.limits.bandGainDb
+  const [pLo, pHi] = profile.limits.preampDb
+  const [qLo, qHi] = profile.limits.q
+  const [fLo, fHi] = profile.limits.freqHz
+  const bandList = preset.bands
+    .map((b) => `  {type:${b.type}, freq:${b.freq}, q:${b.q}, gain:${b.gain}}`)
+    .join('\n')
+  return [
+    `You are re-balancing a parametric EQ preset for the headphone chain "${profile.name}" (${profile.houseNotes}).`,
+    `Track: "${preset.title}" by ${preset.artist ?? 'Unknown'}.`,
+    `Current preamp: ${preset.preamp} dB. The user wants preamp = ${targetPreamp} dB.`,
+    `Current bands:\n${bandList}`,
+    `Re-balance the band gains so the EQ stays clean and well-balanced at preamp = ${targetPreamp} dB.`,
+    `No clipping; leave headroom. Apply gentle equal-loudness compensation:`,
+    `  - Lower loudness (more negative preamp) → modest low-end and high-end support to compensate for Fletcher-Munson.`,
+    `  - Higher loudness (less negative preamp) → restrain boosts to protect headroom.`,
+    `Preserve the musical intent: "${preset.intent}".`,
+    `Bounds: band gain ${gLo}..${gHi} dB, preamp ${pLo}..${pHi} dB, q ${qLo}..${qHi}, freq ${fLo}..${fHi} Hz.`,
+    `Respond ONLY with JSON — no prose:`,
+    `{"preamp": number, "intent": "short phrase", "notes": "one sentence",`,
+    ` "bands": [{"type": "...", "freq": number, "q": number, "gain": number}]}`,
+  ].join('\n')
+}
+
+export async function optimizeForPreamp(
+  preset: Preset,
+  targetPreamp: number,
+  profile: Profile,
+  opts: OptimizeOpts = {},
+): Promise<Preset> {
+  const exec = opts.exec ?? defaultExec
+  const timeoutMs = opts.timeoutMs ?? 90_000
+  let out: string
+  try { out = await exec(buildOptimizePrompt(preset, targetPreamp, profile), timeoutMs) }
+  catch (e) { throw new EqGenError(`claude CLI failed: ${(e as Error).message}`) }
+
+  const parsed = extractJson(out) as { preamp?: number; intent?: string; notes?: string; bands?: unknown[] }
+  if (!Array.isArray(parsed.bands) || parsed.bands.length === 0) throw new EqGenError('no bands in model output')
+
+  const candidate = {
+    ...preset,
+    preamp: Number(parsed.preamp ?? targetPreamp),
+    bands: parsed.bands.map((b, i) => ({ ...(b as object), id: `b${i + 1}` })),
+    intent: parsed.intent ?? preset.intent,
+    notes: parsed.notes ?? preset.notes,
+    updatedAt: new Date().toISOString(),
+  }
+  try { return parsePreset(candidate) }
+  catch (e) { throw new EqGenError(`optimized preset failed schema: ${(e as Error).message}`) }
 }
 
 export async function generateTrackEq(track: TrackMeta, profile: Profile, opts: GenerateOpts): Promise<Preset> {

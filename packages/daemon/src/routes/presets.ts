@@ -14,6 +14,8 @@
  */
 import type { FastifyPluginAsync, FastifyReply } from 'fastify'
 import { StoreError, type PresetStore } from '../presets.js'
+import { optimizeForPreamp } from '../eqgen.js'
+import { parsePreset, clampPreset } from '@tonedeck/shared'
 
 export interface PresetsPluginOpts {
   store: PresetStore
@@ -98,6 +100,27 @@ const presetsPlugin: FastifyPluginAsync<PresetsPluginOpts> = async (fastify, { s
       return await store.revertPreset(slug, body)
     } catch (e) {
       return mapStoreError(e, reply)
+    }
+  })
+
+  // ── Optimize preamp ───────────────────────────────────────────────────────
+
+  fastify.post('/api/optimize-preamp', async (req, reply) => {
+    const body = req.body as { preset?: unknown; targetPreamp?: unknown }
+    if (typeof body.targetPreamp !== 'number') {
+      return reply.status(422).send({ error: 'targetPreamp must be a number' })
+    }
+    let preset
+    try { preset = parsePreset(body.preset) }
+    catch (e) { return reply.status(422).send({ error: (e as Error).message }) }
+    const profile = store.getProfile(preset.profile)
+    if (!profile) return reply.status(422).send({ error: 'unknown profile' })
+    try {
+      const optimized = await optimizeForPreamp(preset, body.targetPreamp, profile)
+      const { preset: safe } = clampPreset(optimized, profile)
+      return { preset: safe }
+    } catch (e) {
+      return reply.status(422).send({ error: (e as Error).message })
     }
   })
 
