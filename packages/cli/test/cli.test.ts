@@ -423,6 +423,26 @@ describe('actionAuto', () => {
       expect.objectContaining({ method: 'GET' }),
     )
   })
+
+  it('actionAuto --now POSTs /api/auto/now then GETs /api/auto', async () => {
+    const autoResult = { mode: 'armed', following: true }
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(jsonResponse({}))           // POST /api/auto/now
+      .mockResolvedValueOnce(jsonResponse(autoResult))   // GET /api/auto
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
+
+    await actionAuto(ctx, undefined, { json: false, now: true })
+
+    expect(fetchFn).toHaveBeenCalledWith(
+      'http://localhost:5055/api/auto/now',
+      expect.objectContaining({ method: 'POST' }),
+    )
+    expect(fetchFn).toHaveBeenCalledWith(
+      'http://localhost:5055/api/auto',
+      expect.objectContaining({ method: 'GET' }),
+    )
+  })
 })
 
 describe('actionDoctor', () => {

@@ -630,7 +630,7 @@ export async function actionAuto(
   if (opts.now) {
     await apiPost(ctx, '/api/auto/now')
     const s = await apiGet<{ mode: string; following: boolean }>(ctx, '/api/auto')
-    return out(opts.json, s, `auto: ${s.mode}`)
+    return out(opts.json, s, `auto: ${s.mode}${s.following ? ' (following Apple Music)' : ''}`)
   }
   if (sub === 'on' || sub === 'off') {
     const s = await apiPost<{ mode: string; following: boolean }>(ctx, '/api/auto', { on: sub === 'on' })
