@@ -271,6 +271,11 @@ export class Lifecycle extends EventEmitter {
     try { return this._activeProfileOrThrow() } catch { return null }
   }
 
+  /** The slug of the currently applied preset, or null. */
+  get activePreset(): string | null {
+    return this.state.activePreset
+  }
+
   // ── Device helpers ──────────────────────────────────────────────────────────
 
   async currentOutput(): Promise<string> {

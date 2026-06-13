@@ -10,14 +10,19 @@ import fastifyStatic from '@fastify/static'
 import { fileURLToPath } from 'node:url'
 import { resolve, join } from 'node:path'
 import { existsSync } from 'node:fs'
+import { promises as fsp } from 'node:fs'
 import { homedir } from 'node:os'
 import { PresetStore } from './presets.js'
 import { Artwork } from './artwork.js'
 import { Lifecycle } from './lifecycle.js'
 import { MeterBroadcaster } from './meters.js'
+import { AutoDJ } from './autodj.js'
+import { readNowPlaying } from './nowplaying.js'
+import { generateTrackEq } from './eqgen.js'
 import presetsPlugin from './routes/presets.js'
 import artworkPlugin from './routes/artwork.js'
 import controlPlugin from './routes/control.js'
+import autoPlugin from './routes/auto.js'
 
 /**
  * Repo root resolved relative to this file so the path works from both
@@ -56,6 +61,8 @@ export interface BuildServerOpts {
 export interface ToneDeckServer {
   lifecycle: Lifecycle | null
   meters: MeterBroadcaster | null
+  autodj: AutoDJ | null
+  autoTimer: ReturnType<typeof setInterval> | null
 }
 
 export async function buildServer(opts: BuildServerOpts = {}) {
@@ -100,7 +107,7 @@ export async function buildServer(opts: BuildServerOpts = {}) {
 
   // ── Audio control plane (lifecycle + live meters + ws) ──────────────────────
   const lifecycleEnabled = opts.lifecycle ?? true
-  const handle: ToneDeckServer = { lifecycle: null, meters: null }
+  const handle: ToneDeckServer = { lifecycle: null, meters: null, autodj: null, autoTimer: null }
 
   if (lifecycleEnabled) {
     const lifecycle =
@@ -111,7 +118,29 @@ export async function buildServer(opts: BuildServerOpts = {}) {
         cdspPort: opts.cdspPort,
         deviceSwitching: opts.deviceSwitching,
       })
-    const meters = opts._meters ?? new MeterBroadcaster({ lifecycle })
+
+    // ── AutoDJ: construct before meters so we can pass autoSource ───────────
+    const autoStatePath = join(dataDir, 'auto.json')
+    let autoEnabled = false
+    try { autoEnabled = JSON.parse(await fsp.readFile(autoStatePath, 'utf8')).enabled === true } catch { /* default off */ }
+
+    const autodj = new AutoDJ({
+      lifecycle,
+      store,
+      nowPlaying: () => readNowPlaying(),
+      generate: (track, profile, o) => generateTrackEq(track, profile, { slug: o.slug }),
+    })
+    const persistAuto = async (enabled: boolean): Promise<void> => {
+      const tmp = `${autoStatePath}.tmp`
+      await fsp.writeFile(tmp, JSON.stringify({ enabled }))
+      await fsp.rename(tmp, autoStatePath)
+    }
+    if (autoEnabled) autodj.arm()
+    const pollMs = Number(process.env.TONEDECK_AUTO_POLL_MS ?? 2000)
+    const autoTimer = setInterval(() => { void autodj.tick() }, pollMs)
+    autoTimer.unref?.()
+
+    const meters = opts._meters ?? new MeterBroadcaster({ lifecycle, autoSource: autodj })
 
     // Re-adopt or clear whatever audio state a prior daemon left behind. Never
     // auto-spawns; never grabs audio on boot.
@@ -119,12 +148,15 @@ export async function buildServer(opts: BuildServerOpts = {}) {
 
     await server.register(fastifyWebsocket)
     await server.register(controlPlugin, { lifecycle })
+    await server.register(autoPlugin, { autodj, persist: persistAuto })
     server.get('/ws', { websocket: true }, (socket) => {
       meters.addSocket(socket)
     })
 
     handle.lifecycle = lifecycle
     handle.meters = meters
+    handle.autodj = autodj
+    handle.autoTimer = autoTimer
   }
 
   // Expose the audio handles for direct-run shutdown (and tests).
@@ -149,6 +181,7 @@ if (isMain) {
   const shutdown = async (signal: string): Promise<void> => {
     console.log(`tonedeck daemon received ${signal} — closing control plane (audio left running)`)
     const handle = (server as typeof server & { tonedeck?: ToneDeckServer }).tonedeck
+    if (handle?.autoTimer != null) clearInterval(handle.autoTimer)
     handle?.meters?.close()
     try {
       await server.close()
