@@ -619,3 +619,23 @@ export async function actionHealth(ctx: ApiCtx, opts: { json: boolean }): Promis
   const data = await apiGet<{ ok: boolean; version: string; presets: number }>(ctx, '/api/health')
   out(opts.json, data, `ok  version: ${data.version}  presets: ${data.presets}`)
 }
+
+// ─── auto ─────────────────────────────────────────────────────────────────────
+
+export async function actionAuto(
+  ctx: ApiCtx,
+  sub: string | undefined,
+  opts: { json: boolean; now?: boolean },
+): Promise<void> {
+  if (opts.now) {
+    await apiPost(ctx, '/api/auto/now')
+    const s = await apiGet<{ mode: string; following: boolean }>(ctx, '/api/auto')
+    return out(opts.json, s, `auto: ${s.mode}`)
+  }
+  if (sub === 'on' || sub === 'off') {
+    const s = await apiPost<{ mode: string; following: boolean }>(ctx, '/api/auto', { on: sub === 'on' })
+    return out(opts.json, s, `auto ${sub} -> ${s.mode}`)
+  }
+  const s = await apiGet<{ mode: string; following: boolean }>(ctx, '/api/auto')
+  out(opts.json, s, `auto: ${s.mode}${s.following ? ' (following Apple Music)' : ''}`)
+}

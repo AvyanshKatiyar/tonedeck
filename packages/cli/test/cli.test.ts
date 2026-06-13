@@ -21,6 +21,7 @@ import {
   actionTweak,
   actionCreate,
   actionDoctor,
+  actionAuto,
 } from '../src/commands.js'
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
@@ -376,6 +377,51 @@ describe('actionCreate', () => {
     } finally {
       await rm(dir, { recursive: true })
     }
+  })
+})
+
+describe('actionAuto', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+
+  it('actionAuto on calls POST /api/auto with { on: true }', async () => {
+    const autoResult = { mode: 'armed', following: true }
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse(autoResult))
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
+
+    await actionAuto(ctx, 'on', { json: false })
+
+    expect(fetchFn).toHaveBeenCalledWith(
+      'http://localhost:5055/api/auto',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ on: true }) }),
+    )
+  })
+
+  it('actionAuto off calls POST /api/auto with { on: false }', async () => {
+    const autoResult = { mode: 'off', following: false }
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse(autoResult))
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
+
+    await actionAuto(ctx, 'off', { json: false })
+
+    expect(fetchFn).toHaveBeenCalledWith(
+      'http://localhost:5055/api/auto',
+      expect.objectContaining({ method: 'POST', body: JSON.stringify({ on: false }) }),
+    )
+  })
+
+  it('actionAuto status (no sub) calls GET /api/auto', async () => {
+    const autoResult = { mode: 'armed', following: true }
+    const fetchFn = vi.fn().mockResolvedValue(jsonResponse(autoResult))
+    const ctx = makeCtx('http://localhost:5055', fetchFn as FetchFn)
+
+    await actionAuto(ctx, undefined, { json: false })
+
+    expect(fetchFn).toHaveBeenCalledWith(
+      'http://localhost:5055/api/auto',
+      expect.objectContaining({ method: 'GET' }),
+    )
   })
 })
 

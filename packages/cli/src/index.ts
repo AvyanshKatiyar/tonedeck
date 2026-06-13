@@ -30,6 +30,7 @@ import {
   actionArt,
   actionDoctor,
   actionHealth,
+  actionAuto,
 } from './commands.js'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -289,5 +290,13 @@ program
   .command('health')
   .description('Check daemon reachability (alias for first doctor check)')
   .action(wrap(isJson, () => actionHealth(ctx(), { json: isJson() })))
+
+program
+  .command('auto [state]')
+  .description('Follow Apple Music and auto-EQ each track (on|off|status)')
+  .option('--now', 'Tune the currently playing track immediately')
+  .action((state: string | undefined, cmdOpts: { now?: boolean }) =>
+    wrap(isJson, () => actionAuto(ctx(), state, { json: isJson(), now: cmdOpts.now }))(),
+  )
 
 program.parse()
