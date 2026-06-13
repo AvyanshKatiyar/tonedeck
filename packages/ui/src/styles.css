@@ -128,7 +128,229 @@ button {
 /* ── App shell ───────────────────────────────────────────────────────────── */
 .app {
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Body row: main content + persistent console right rail */
+.app__body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  align-items: start;
+  min-height: 0;
   padding-bottom: calc(var(--foot-h) + 8px);
+}
+
+.app__main {
+  min-width: 0;
+}
+
+/* ── Console (persistent right-rail EQ editor) ──────────────────────────── */
+.app__console {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  border-left: 1px solid var(--line);
+  background: var(--panel);
+}
+
+/* Scrollbar styling for the console rail */
+.app__console::-webkit-scrollbar {
+  width: 4px;
+}
+.app__console::-webkit-scrollbar-track {
+  background: transparent;
+}
+.app__console::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 2px;
+}
+
+.console {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Empty placeholder state */
+.console--empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.console__placeholder {
+  font-size: 13px;
+  color: var(--dim);
+  text-align: center;
+  padding: 32px 24px;
+  line-height: 1.5;
+}
+
+/* Console header */
+.console__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--panel);
+  align-items: flex-start;
+}
+
+.console__art {
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.console__meta {
+  flex: 1;
+  min-width: 0;
+}
+
+.console__title {
+  font-weight: 600;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console__artist {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.console__tags {
+  margin-top: 5px;
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.tag--live {
+  color: var(--accent);
+  border-color: rgba(212, 162, 89, 0.45);
+}
+
+/* EQ On/Off (A/B) bypass toggle */
+.eq-toggle {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.eq-toggle__btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 5px 11px 5px 7px;
+  cursor: pointer;
+  transition: border-color var(--t), color var(--t), background var(--t), opacity var(--t);
+}
+
+.eq-toggle__btn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.eq-toggle__btn--on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(212, 162, 89, 0.1);
+}
+
+.eq-toggle__btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.eq-toggle__btn--on:not(:disabled):hover {
+  background: rgba(212, 162, 89, 0.18);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* Mini toggle switch track + thumb inside the button */
+.eq-toggle__track {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+  transition: background var(--t);
+}
+
+.eq-toggle__btn--on .eq-toggle__track {
+  background: var(--accent);
+}
+
+.eq-toggle__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.18s ease;
+}
+
+.eq-toggle__btn--on .eq-toggle__thumb {
+  left: 14px;
+}
+
+.eq-toggle__label {
+  white-space: nowrap;
+  min-width: 30px;
+}
+
+/* Return-to-live button */
+.console__return-live {
+  background: transparent;
+  border: 1px solid rgba(212, 162, 89, 0.35);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 10px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--t), border-color var(--t);
+  align-self: center;
+  flex-shrink: 0;
+}
+
+.console__return-live:hover {
+  background: rgba(212, 162, 89, 0.12);
+  border-color: var(--accent);
+}
+
+/* Console body */
+.console__body {
+  flex: 1;
+  padding: 16px;
+  overflow-y: visible;
 }
 
 /* ── NowPlayingBar ───────────────────────────────────────────────────────── */
@@ -497,69 +719,13 @@ button {
   letter-spacing: 0.02em;
 }
 
-/* ── Drawer ──────────────────────────────────────────────────────────────── */
-.drawer-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  background: rgba(0, 0, 0, 0.5);
-  animation: fade var(--t);
-}
-.drawer {
-  position: fixed;
-  top: 0;
-  right: 0;
-  z-index: 41;
-  width: 420px;
-  max-width: 92vw;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  background: var(--panel);
-  border-left: 1px solid var(--line);
-  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.5);
-  animation: slidein 180ms ease;
-}
-@keyframes slidein {
-  from {
-    transform: translateX(40px);
-    opacity: 0.4;
-  }
-}
+/* ── Drawer body elements (reused by the persistent console) ─────────────── */
+/* The old drawer overlay is replaced by the persistent .console rail.
+   These selectors cover the body content classes still referenced in JSX. */
 @keyframes fade {
   from {
     opacity: 0;
   }
-}
-.drawer__head {
-  display: flex;
-  gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid var(--line);
-}
-.drawer__art {
-  width: 56px;
-  height: 56px;
-  border-radius: 6px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.drawer__meta {
-  flex: 1;
-  min-width: 0;
-}
-.drawer__title {
-  font-weight: 600;
-  font-size: 15px;
-}
-.drawer__artist {
-  font-size: 12px;
-  color: var(--muted);
-}
-.drawer__tags {
-  margin-top: 6px;
-  display: flex;
-  gap: 6px;
 }
 .tag {
   font-size: 10px;
@@ -569,23 +735,6 @@ button {
   border: 1px solid var(--line);
   border-radius: 4px;
   padding: 2px 6px;
-}
-.drawer__close {
-  background: transparent;
-  border: none;
-  color: var(--muted);
-  font-size: 22px;
-  line-height: 1;
-  padding: 0 4px;
-  align-self: flex-start;
-}
-.drawer__close:hover {
-  color: var(--text);
-}
-.drawer__body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
 }
 .eq-canvas {
   width: 100%;
