@@ -38,4 +38,15 @@ describe('generateTrackEq', () => {
     const exec = vi.fn().mockRejectedValue(new Error('timeout'))
     await expect(generateTrackEq(track, profile, { slug: 's', exec })).rejects.toBeInstanceOf(EqGenError)
   })
+  it('tolerates leading prose before the JSON', async () => {
+    const exec = vi.fn().mockResolvedValue('Here is your EQ:\n' + goodJson)
+    const p = await generateTrackEq(track, profile, { slug: 's', exec })
+    expect(p.bands).toHaveLength(2)
+  })
+  it('ignores a model-supplied band id (uses b1,b2,...)', async () => {
+    const json = JSON.stringify({ preamp: -3, intent: 'x', bands: [{ id: 'bass_boost', type: 'lowshelf', freq: 80, q: 0.7, gain: 3 }] })
+    const exec = vi.fn().mockResolvedValue(json)
+    const p = await generateTrackEq(track, profile, { slug: 's', exec })
+    expect(p.bands[0].id).toBe('b1')
+  })
 })

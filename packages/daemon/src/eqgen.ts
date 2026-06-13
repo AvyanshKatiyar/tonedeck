@@ -15,13 +15,12 @@ export type GenExec = (prompt: string, timeoutMs: number) => Promise<string>
 
 const defaultExec: GenExec = (prompt, timeoutMs) =>
   new Promise((resolve, reject) => {
-    const child = execFile(
+    execFile(
       'claude',
-      ['-p', '--model', 'sonnet'],
+      ['-p', '--model', 'sonnet', prompt],
       { timeout: timeoutMs, env: { ...process.env, MAX_THINKING_TOKENS: '0' }, maxBuffer: 1 << 20 },
       (err, stdout) => (err ? reject(err) : resolve(stdout.toString())),
     )
-    child.stdin?.end(prompt)
   })
 
 export interface GenerateOpts { slug: string; exec?: GenExec; timeoutMs?: number }
@@ -45,6 +44,8 @@ function buildPrompt(track: TrackMeta, profile: Profile): string {
 function extractJson(raw: string): unknown {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i)
   const body = fenced ? fenced[1] : raw
+  // Takes the outermost {..}. Leading prose containing a stray '{' (or trailing
+  // prose with a stray '}') will fail JSON.parse → EqGenError → caller falls back.
   const start = body.indexOf('{')
   const end = body.lastIndexOf('}')
   if (start < 0 || end < 0) throw new EqGenError('no JSON object in model output')
@@ -73,7 +74,7 @@ export async function generateTrackEq(track: TrackMeta, profile: Profile, opts: 
     album: track.album ?? undefined,
     profile: profile.id,
     preamp: Number(parsed.preamp ?? -3),
-    bands: parsed.bands.map((b, i) => ({ id: `b${i + 1}`, ...(b as object) })),
+    bands: parsed.bands.map((b, i) => ({ ...(b as object), id: `b${i + 1}` })),
     intent: parsed.intent ?? 'auto',
     notes: parsed.notes,
     provenance: { createdBy: 'claude' as const, model: 'sonnet (cli)', history: [] },
