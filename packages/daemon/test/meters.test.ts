@@ -232,4 +232,18 @@ describe('MeterBroadcaster event relay', () => {
     expect(sock.sent).toHaveLength(0)
     mb.close()
   })
+
+  it("relays autoSource 'auto' events to sockets", () => {
+    const lc = new FakeLifecycle()
+    const autoSource = new EventEmitter()
+    const mb = new MeterBroadcaster({ lifecycle: lc, intervalMs: 1000, autoSource })
+    const sock = new FakeSocket()
+    mb.addSocket(sock)
+
+    autoSource.emit('auto', { mode: 'armed', generating: false })
+
+    const msgs = sock.messages()
+    expect(msgs).toContainEqual({ type: 'auto', mode: 'armed', generating: false })
+    mb.close()
+  })
 })

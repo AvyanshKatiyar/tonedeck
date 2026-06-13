@@ -29,6 +29,7 @@ export interface MeterLifecycle {
 export interface MeterBroadcasterOpts {
   lifecycle: MeterLifecycle
   intervalMs?: number
+  autoSource?: { on(event: 'auto', listener: (payload: unknown) => void): unknown }
 }
 
 export interface MeterMessage {
@@ -53,6 +54,7 @@ export class MeterBroadcaster {
     this.intervalMs = opts.intervalMs ?? 100
     this.lifecycle.on('state', (payload) => this._relay('state', payload))
     this.lifecycle.on('applied', (payload) => this._relay('applied', payload))
+    opts.autoSource?.on('auto', (payload) => this._broadcast({ type: 'auto', ...(payload as object) }))
   }
 
   /** Register a socket and start polling if this is the first one. */

@@ -266,6 +266,11 @@ export class Lifecycle extends EventEmitter {
     return this.activeYml
   }
 
+  /** The profile currently driving safety/clamp, or null if none resolved. */
+  get activeProfile(): Profile | null {
+    try { return this._activeProfileOrThrow() } catch { return null }
+  }
+
   // ── Device helpers ──────────────────────────────────────────────────────────
 
   async currentOutput(): Promise<string> {
