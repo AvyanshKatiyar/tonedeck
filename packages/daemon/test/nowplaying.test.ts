@@ -21,6 +21,17 @@ describe('parseNowPlaying', () => {
   it('maps paused', () => {
     expect(parseNowPlaying('paused|5|T|Ar|Al').state).toBe('paused')
   })
+  it('returns closed for too-few fields (truncated osascript output)', () => {
+    expect(parseNowPlaying('playing|5').state).toBe('closed')
+    expect(parseNowPlaying('playing|5').trackId).toBeNull()
+    expect(parseNowPlaying('playing|5').artist).toBeNull()
+  })
+  it('returns closed for empty string', () => {
+    expect(parseNowPlaying('').state).toBe('closed')
+  })
+  it('returns closed for an unknown state token', () => {
+    expect(parseNowPlaying('rewinding|5|T|Ar|Al').state).toBe('closed')
+  })
 })
 
 describe('readNowPlaying', () => {

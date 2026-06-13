@@ -40,6 +40,10 @@ export function parseNowPlaying(raw: string): NowPlaying {
   }
   const parts = trimmed.split('|')
   const n = parts.length
+  if (n < 5) {
+    // Truncated/garbage osascript output — never treat as a real track.
+    return { state: 'closed', trackId: null, title: null, artist: null, album: null }
+  }
   // Music returns 5 fields: state|id|title|artist|album. A title may itself
   // contain '|', so anchor artist/album to the END (last two fields) and let
   // the title absorb any interior delimiters.
@@ -49,10 +53,10 @@ export function parseNowPlaying(raw: string): NowPlaying {
   const album = parts[n - 1] ?? ''
   const artist = parts[n - 2] ?? ''
   const title = parts.slice(2, n - 2).join('|')
-  const state: PlayerState = head === 'paused' ? 'paused' : 'playing'
+  const state: PlayerState = head === 'paused' ? 'paused' : head === 'playing' ? 'playing' : 'closed'
   return {
     state,
-    trackId: Number(id) || null,
+    trackId: Number(id) > 0 ? Number(id) : null, // Music IDs are always > 0; 0/NaN = absent
     title: title || null,
     artist: artist || null,
     album: album || null,
