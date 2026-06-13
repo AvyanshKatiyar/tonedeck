@@ -14,4 +14,20 @@ describe('slugify', () => {
   it('is stable for the same inputs', () => {
     expect(slugify('A', 'B')).toBe(slugify('A', 'B'))
   })
+  it('caps length and leaves no trailing hyphen when a boundary falls at the cap', () => {
+    const slug = slugify('a'.repeat(63), 'b'.repeat(10))
+    expect(slug.length).toBeLessThanOrEqual(64)
+    expect(slug).not.toMatch(/-$/)
+  })
+  it("falls back to 'preset' for empty/all-punctuation input", () => {
+    expect(slugify('???')).toBe('preset')
+    expect(slugify()).toBe('preset')
+    expect(slugify(null, undefined)).toBe('preset')
+  })
+  it('strips diacritics', () => {
+    expect(slugify('Björk', 'Médula')).toBe('bjork-medula')
+  })
+  it('strips unicode apostrophes', () => {
+    expect(slugify('D’Angelo')).toBe('dangelo')
+  })
 })
