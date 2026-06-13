@@ -2,6 +2,16 @@
    One accent (amber), near-black ground, generous space, no glassmorphism,
    no gradients except the deterministic fallback art tiles. */
 
+/* ── Warm Editorial theme tokens (Task 9) ────────────────────────────────── */
+:root {
+  --bg: #15110f; --panel: #221b16; --line: rgba(255,255,255,.06);
+  --ink: #f3ece2; --ink-dim: rgba(243,236,226,.66);
+  --accent: #e3a55b; --accent-warm: #e07a5f;
+  --radius-card: 8px; --radius-hero: 16px;
+  --serif: Georgia, "Times New Roman", serif;
+  --shadow-card: 0 6px 18px rgba(0,0,0,.4);
+}
+
 :root {
   --bg: #0b0b0d;
   --panel: #131316;
@@ -1050,4 +1060,153 @@ button {
   background: var(--danger);
   border-color: var(--danger);
   color: #fff;
+}
+
+/* ── NowLiveCard — Warm Editorial hero (Task 10) ─────────────────────────── */
+.hero {
+  display: flex;
+  gap: 20px;
+  padding: 20px 24px;
+  align-items: stretch;
+  background: linear-gradient(180deg, #1c1714, var(--bg));
+}
+
+.cover {
+  width: 132px;
+  height: 132px;
+  border-radius: var(--radius-hero);
+  flex: 0 0 auto;
+  overflow: hidden;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  position: relative;
+  background: var(--panel);
+}
+
+.cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.au-badge {
+  position: absolute;
+  top: 9px;
+  left: 9px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  backdrop-filter: blur(6px);
+  white-space: nowrap;
+}
+
+.heromid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.now-live-label {
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-bottom: 3px;
+}
+
+.hero-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero-subtitle {
+  font-size: 13px;
+  color: var(--ink-dim);
+  margin: 0 0 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hero-curve {
+  flex: 1;
+  min-height: 74px;
+  margin-bottom: 8px;
+}
+
+.hero-curve .eq-canvas {
+  height: 80px;
+  background: rgba(0, 0, 0, 0.25);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+
+.chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.chip {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 8px;
+  background: rgba(227, 165, 91, 0.14);
+  color: #f0c896;
+  white-space: nowrap;
+}
+
+.chip-pre {
+  opacity: 0.75;
+}
+
+.hero-meters {
+  width: 74px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.empty-state {
+  padding: 28px 24px;
+  font-size: 13px;
+  color: var(--ink-dim);
+  background: linear-gradient(180deg, #1c1714, var(--bg));
+  font-family: var(--serif);
+}
+
+.tuning-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-hero);
+  background: rgba(227, 165, 91, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  backdrop-filter: blur(2px);
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
 }
