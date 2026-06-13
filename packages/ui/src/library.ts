@@ -40,6 +40,52 @@ export function kindCounts(presets: PresetSummary[]): Record<KindFilter, number>
   }
 }
 
+export interface AlbumDeck {
+  album: string
+  albumSlug: string | null
+  albumPreset?: PresetSummary
+  artwork?: PresetSummary['artwork']
+  songs: PresetSummary[]
+}
+
+export interface ArtistGroup {
+  artist: string
+  albums: AlbumDeck[]
+}
+
+/** Group presets into artist -> album-deck -> song. Album presets define a
+ *  deck; track presets slot in by their `album` field. Genre/mood and
+ *  album-less tracks fall back to a deck named by their title. */
+export function groupByArtist(presets: PresetSummary[], query: string): ArtistGroup[] {
+  const q = query.toLowerCase().trim()
+  const hit = (p: PresetSummary) =>
+    !q || [p.title, p.artist, p.album].some((v) => (v ?? '').toLowerCase().includes(q))
+  const byArtist = new Map<string, Map<string, AlbumDeck>>()
+  for (const p of presets) {
+    if (!hit(p)) continue
+    const artist = p.artist?.trim() || 'Unknown Artist'
+    const albumName = (p.kind === 'album' ? p.title : p.album) || p.title
+    const albums = byArtist.get(artist) ?? new Map<string, AlbumDeck>()
+    byArtist.set(artist, albums)
+    const deck = albums.get(albumName) ?? { album: albumName, albumSlug: null, songs: [] }
+    if (p.kind === 'album') {
+      deck.albumPreset = p
+      deck.albumSlug = p.slug
+      deck.artwork = p.artwork
+    } else {
+      deck.songs.push(p)
+      if (!deck.artwork) deck.artwork = p.artwork
+    }
+    albums.set(albumName, deck)
+  }
+  return [...byArtist.entries()]
+    .map(([artist, albums]) => ({
+      artist,
+      albums: [...albums.values()].sort((a, b) => a.album.localeCompare(b.album)),
+    }))
+    .sort((a, b) => a.artist.localeCompare(b.artist))
+}
+
 /**
  * Filter by query + kind, then group. The "all" view groups into
  * Albums / Songs / Genres & moods sections (empty sections omitted; a lone

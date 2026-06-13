@@ -21,6 +21,7 @@ export interface PresetSummary {
   kind: string
   title: string
   artist?: string
+  album?: string
   intent: string
   version: number
   profile: string
@@ -61,3 +62,4 @@ export type WsMessage =
   | { type: 'meters'; rms: [number, number]; peak: [number, number]; clippedSamples?: number }
   | { type: 'state' }
   | { type: 'applied' }
+  | { type: 'auto'; mode: 'off' | 'armed' | 'yielded'; generating?: boolean }
