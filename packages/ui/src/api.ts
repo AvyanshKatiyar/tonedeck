@@ -95,4 +95,9 @@ export const api = {
 
   /** URL for an album's cached artwork (404 → caller shows a fallback tile). */
   artworkUrl: (slug: string) => `/api/artwork/${slug}`,
+
+  getAuto: () => req<{ mode: 'off' | 'armed' | 'yielded'; following: boolean }>('/api/auto'),
+  setAuto: (on: boolean) =>
+    req<{ mode: 'off' | 'armed' | 'yielded'; following: boolean }>('/api/auto', json({ on })),
+  autoNow: () => req<{ mode: string; following: boolean }>('/api/auto/now', json({})),
 }

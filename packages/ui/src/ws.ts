@@ -14,12 +14,17 @@ function wsUrl(): string {
   return `${proto}://${location.host}/ws`
 }
 
-export function useMeters(onInvalidate: () => void): { meters: Meters | null; connected: boolean } {
+export function useMeters(
+  onInvalidate: () => void,
+  onAuto: (mode: 'off' | 'armed' | 'yielded', generating?: boolean) => void,
+): { meters: Meters | null; connected: boolean } {
   const [meters, setMeters] = useState<Meters | null>(null)
   const [connected, setConnected] = useState(false)
-  // Keep the latest callback without resubscribing the socket.
+  // Keep the latest callbacks without resubscribing the socket.
   const cb = useRef(onInvalidate)
   cb.current = onInvalidate
+  const autoCb = useRef(onAuto)
+  autoCb.current = onAuto
 
   useEffect(() => {
     let socket: WebSocket | null = null
@@ -47,6 +52,8 @@ export function useMeters(onInvalidate: () => void): { meters: Meters | null; co
           })
         } else if (msg.type === 'state' || msg.type === 'applied') {
           cb.current()
+        } else if (msg.type === 'auto') {
+          autoCb.current(msg.mode, msg.generating)
         }
       }
 

@@ -28,7 +28,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const actions = useMemo(() => createActions(dispatch, ref), [])
 
-  // Boot: status + presets + profile in parallel.
+  // Boot: status + presets + profile in parallel; also fetch initial auto state (tolerate failure).
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -41,6 +41,13 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         if (!cancelled) dispatch({ t: 'ready', status, presets, profile })
       } catch {
         if (!cancelled) dispatch({ t: 'unreachable' })
+        return
+      }
+      try {
+        const autoState = await api.getAuto()
+        if (!cancelled) dispatch({ t: 'auto', mode: autoState.mode })
+      } catch {
+        /* auto state defaults to off — non-fatal */
       }
     })()
     return () => {
@@ -65,6 +72,9 @@ export function useStore() {
   return ctx
 }
 
-export function useMeterFeed(onInvalidate: () => void): { meters: Meters | null; connected: boolean } {
-  return useMeters(onInvalidate)
+export function useMeterFeed(
+  onInvalidate: () => void,
+  onAuto: (mode: 'off' | 'armed' | 'yielded', generating?: boolean) => void,
+): { meters: Meters | null; connected: boolean } {
+  return useMeters(onInvalidate, onAuto)
 }

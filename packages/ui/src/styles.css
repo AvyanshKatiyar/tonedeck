@@ -1420,3 +1420,161 @@ button {
   font-weight: 700;
   opacity: 1;
 }
+
+/* ── TopBar (Task 12) ─────────────────────────────────────────────────────── */
+.tb {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+
+/* Serif wordmark + accent dot */
+.wm {
+  font-family: var(--serif);
+  font-weight: 800;
+  font-size: 17px;
+  letter-spacing: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.wm__dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+}
+
+/* Device / profile pill */
+.pill--device {
+  background: rgba(243, 236, 226, 0.1);
+  color: rgba(243, 236, 226, 0.78);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 10px;
+}
+
+/* Spacer */
+.tb__grow {
+  flex: 1;
+}
+
+/* Settings icon button */
+.tb__icon {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 14px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--t), color var(--t);
+  flex-shrink: 0;
+}
+
+.tb__icon:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text);
+}
+
+/* ── AutoToggle (Task 12) ─────────────────────────────────────────────────── */
+.auto-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.auto-toggle__btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(227, 165, 91, 0.4);
+  background: rgba(227, 165, 91, 0.14);
+  color: #f0c896;
+  cursor: pointer;
+  transition: background var(--t), border-color var(--t), color var(--t);
+}
+
+.auto-toggle:not(.auto-toggle--on) .auto-toggle__btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--line-strong);
+  color: var(--muted);
+}
+
+.auto-toggle__btn:hover {
+  background: rgba(227, 165, 91, 0.22);
+}
+
+.auto-toggle:not(.auto-toggle--on) .auto-toggle__btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text);
+}
+
+/* Toggle switch track */
+.auto-sw {
+  display: inline-block;
+  width: 34px;
+  height: 19px;
+  border-radius: 999px;
+  position: relative;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.18);
+  transition: background var(--t);
+}
+
+.auto-sw--on {
+  background: var(--accent);
+}
+
+/* Toggle switch thumb */
+.auto-sw::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s ease;
+}
+
+.auto-sw--off::after {
+  left: 2px;
+}
+
+.auto-sw--on::after {
+  left: 17px;
+}
+
+.auto-toggle__label {
+  white-space: nowrap;
+}
+
+/* Hint line shown when yielded */
+.auto-toggle__hint {
+  font-size: 10px;
+  color: var(--muted);
+  font-style: italic;
+  padding-right: 4px;
+}

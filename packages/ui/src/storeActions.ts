@@ -157,5 +157,14 @@ export function createActions(
     },
     setAddOpen: (open) => dispatch({ t: 'add', open }),
     ackClip: () => dispatch({ t: 'clipAck', value: ref.current.status?.clippedSamples ?? 0 }),
+    setAuto: async (on) => {
+      try {
+        const r = await api.setAuto(on)
+        dispatch({ t: 'auto', mode: r.mode })
+      } catch (e) {
+        fail(e)
+      }
+    },
+    dispatchAuto: (mode, generating) => dispatch({ t: 'auto', mode, generating }),
   }
 }

@@ -24,6 +24,7 @@ export interface State {
   status: Status | null
   presets: PresetSummary[]
   profile: Profile | null
+  auto: { mode: 'off' | 'armed' | 'yielded'; generating: boolean }
   drawerSlug: string | null
   base: Preset | null
   draft: Preset | null
@@ -39,6 +40,7 @@ export const initial: State = {
   status: null,
   presets: [],
   profile: null,
+  auto: { mode: 'off', generating: false },
   drawerSlug: null,
   base: null,
   draft: null,
@@ -54,6 +56,7 @@ export type Action =
   | { t: 'unreachable' }
   | { t: 'status'; status: Status }
   | { t: 'presets'; presets: PresetSummary[] }
+  | { t: 'auto'; mode: 'off' | 'armed' | 'yielded'; generating?: boolean }
   | { t: 'drawerOpen'; slug: string; preset: Preset }
   | { t: 'drawerClose' }
   | { t: 'draft'; draft: Preset }
@@ -75,6 +78,8 @@ export function reducer(s: State, a: Action): State {
       return { ...s, phase: 'ready', status: a.status }
     case 'presets':
       return { ...s, presets: a.presets }
+    case 'auto':
+      return { ...s, auto: { mode: a.mode, generating: a.generating ?? s.auto.generating } }
     case 'drawerOpen':
       return { ...s, drawerSlug: a.slug, base: a.preset, draft: a.preset, vibes: ZERO_VIBES }
     case 'drawerClose':
@@ -106,6 +111,8 @@ export interface Actions {
   toast: (text: string, kind?: Toast['kind']) => void
   dismissToast: (id: number) => void
   applyPreset: (slug: string) => Promise<void>
+  setAuto: (on: boolean) => Promise<void>
+  dispatchAuto: (mode: 'off' | 'armed' | 'yielded', generating?: boolean) => void
   engage: () => Promise<void>
   disengage: () => Promise<void>
   bypass: (on: boolean) => Promise<void>
