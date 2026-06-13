@@ -439,6 +439,20 @@ describe('bypass', () => {
     expect(parsed.devices).toEqual(appliedDevices)
   })
 
+  it('on → flat config preserves active preset preamp (level-matched A/B)', async () => {
+    // preset has preamp -4; toggling bypass on must NOT jump to 0 dB
+    const preset = makePreset({ slug: 'mbdtf', preamp: -4 })
+    const { lc, clients } = await makeHarness({ presets: { mbdtf: preset } })
+    await lc.engage('mbdtf')
+
+    await lc.bypass(true)
+    const flat = clients[0].setConfigs[clients[0].setConfigs.length - 1]
+    const parsed = YAML.parse(flat.yaml) as {
+      filters: Record<string, { type: string; parameters: { gain: number } }>
+    }
+    expect(parsed.filters['Preamp'].parameters.gain).toBe(-4)
+  })
+
   it('off → re-applies active preset, bypass=false', async () => {
     const { lc, clients, dataDir } = await makeHarness()
     await lc.engage('mbdtf')

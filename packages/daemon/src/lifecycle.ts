@@ -541,7 +541,9 @@ export class Lifecycle extends EventEmitter {
       const profile = this._activeProfileOrThrow()
       const device = this.state.lastRealOutput
       if (!device) throw new LifecycleError('engage_failed', 'no saved playback device while engaged')
-      const yaml = this._flatYaml(profile, device)
+      const slug = this.state.activePreset
+      const preamp = (slug && this.store.getPreset(slug)?.preamp) || 0
+      const yaml = this._flatYaml(profile, device, preamp)
       await this.client.setConfig(yaml)
       await this._setState({ bypass: true })
       this.lastEvent = 'bypass on (flat passthrough)'
@@ -554,17 +556,17 @@ export class Lifecycle extends EventEmitter {
     return this.status()
   }
 
-  /** Minimal flat config: same devices block (byte-identical), Preamp 0 dB only. */
-  private _flatYaml(profile: Profile, device: string): string {
+  /** Minimal flat config: same devices block (byte-identical), flat bands, preamp preserved. */
+  private _flatYaml(profile: Profile, device: string, preamp: number): string {
     const devices = emitDevicesBlock(profile, device)
     const config = {
       title: `${profile.name} - Bypass (flat)`,
-      description: 'ToneDeck bypass — flat passthrough (Preamp 0 dB only)',
+      description: 'ToneDeck bypass — flat bands, preamp preserved (level-matched A/B)',
       devices,
       filters: {
         Preamp: {
           type: 'Gain',
-          parameters: { gain: 0, inverted: false, mute: false, scale: 'dB' },
+          parameters: { gain: preamp, inverted: false, mute: false, scale: 'dB' },
         },
       },
       pipeline: [{ type: 'Filter', channels: [0, 1], names: ['Preamp'] }],
