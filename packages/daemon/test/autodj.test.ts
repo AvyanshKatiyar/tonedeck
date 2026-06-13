@@ -56,6 +56,7 @@ describe('AutoDJ', () => {
     dj.arm(); await dj.tick(); await dj.tick()
     expect(gen).toHaveBeenCalledOnce()
     expect(st.createPreset).toHaveBeenCalledOnce()
+    expect(st.createPreset).toHaveBeenCalledWith(expect.anything(), { clamp: true })
     expect(lc.applied).toContain('nas-ny-state')
   })
 
@@ -79,5 +80,32 @@ describe('AutoDJ', () => {
     const dj = new AutoDJ({ lifecycle: lc as any, store: store(['nas-ny-state']) as any, nowPlaying: async () => tracks.ny, generate: vi.fn(), debounceMs: 0 })
     dj.arm(); await dj.tick(); await dj.tick(); await dj.tick(); await dj.tick()
     expect(lc.applied.filter((s) => s === 'nas-ny-state')).toHaveLength(1)
+  })
+
+  it('re-applies the current track after disarm then re-arm', async () => {
+    const lc = fakeLifecycle()
+    const dj = new AutoDJ({ lifecycle: lc as any, store: store(['nas-ny-state']) as any, nowPlaying: async () => tracks.ny, generate: vi.fn(), debounceMs: 0 })
+    dj.arm(); await dj.tick(); await dj.tick()
+    expect(lc.applied).toEqual(['nas-ny-state'])
+    dj.disarm()
+    dj.arm(); await dj.tick(); await dj.tick()
+    expect(lc.applied).toEqual(['nas-ny-state', 'nas-ny-state']) // re-applied after re-arm
+  })
+
+  it('stops generating past the hourly cap and falls back to album', async () => {
+    const lc = fakeLifecycle()
+    const st = store(['nas-illmatic']) // album exists as fallback for second track only
+    // first track has album 'It Was Written' — no preset for it, so generate fires
+    let current = { ...tracks.ny, album: 'It Was Written' }
+    const gen = vi.fn(async () => ({ slug: 'nas-ny-state', kind: 'track' }))
+    const dj = new AutoDJ({ lifecycle: lc as any, store: st as any, nowPlaying: async () => current, generate: gen as any, debounceMs: 0, maxGenPerHour: 1 })
+    dj.arm()
+    // first new track -> no track preset, no album preset -> generates (cap: 0->1)
+    await dj.tick(1000); await dj.tick(1000)
+    // change track id so it's treated as a new track, but no track preset -> would generate, cap=1 already hit -> album fallback
+    current = { ...tracks.ny, trackId: 99, title: 'Other', album: 'Illmatic' }
+    await dj.tick(2000); await dj.tick(2000)
+    expect(gen).toHaveBeenCalledTimes(1)
+    expect(lc.applied).toContain('nas-illmatic')
   })
 })

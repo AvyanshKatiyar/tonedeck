@@ -32,6 +32,7 @@ export class AutoDJ extends EventEmitter {
   private pendingSince = 0
   private initiatedSlug: string | null = null
   private inFlight = new Set<number>()
+  private ticking = false
   private genTimestamps: number[] = []
   private readonly o: AutoDJOpts & { debounceMs: number; maxGenPerHour: number }
 
@@ -44,7 +45,14 @@ export class AutoDJ extends EventEmitter {
   }
 
   arm() { if (this.mode === 'off') this.setMode('armed') }
-  disarm() { this.setMode('off') }
+  disarm() {
+    this.lastAppliedTrackId = null
+    this.pendingTrackId = null
+    this.initiatedSlug = null
+    this.pendingSince = 0
+    // in-flight generate self-cleans via its finally block; don't touch inFlight here
+    this.setMode('off')
+  }
 
   private setMode(m: AutoMode) {
     if (this.mode === m) return
@@ -61,20 +69,24 @@ export class AutoDJ extends EventEmitter {
   /** One poll cycle. Call on an interval (and from tests). Never throws. */
   async tick(now = Date.now()): Promise<void> {
     if (this.mode === 'off') return
-    let np: NowPlaying
-    try { np = await this.o.nowPlaying() } catch { return }
-    this.last = np
-    if (np.state !== 'playing' || np.trackId == null) return
-    if (np.trackId === this.lastAppliedTrackId) return
-
-    if (np.trackId !== this.pendingTrackId) { this.pendingTrackId = np.trackId; this.pendingSince = now; return }
-    if (now - this.pendingSince < this.o.debounceMs) return
-
-    if (this.mode === 'yielded') this.setMode('armed') // resume on the new, stable track
-    await this.resolveAndApply(np)
+    if (this.ticking) return
+    this.ticking = true
+    try {
+      let np: NowPlaying
+      try { np = await this.o.nowPlaying() } catch { return }
+      this.last = np
+      if (np.state !== 'playing' || np.trackId == null) return
+      if (np.trackId === this.lastAppliedTrackId) return
+      if (np.trackId !== this.pendingTrackId) { this.pendingTrackId = np.trackId; this.pendingSince = now; return }
+      if (now - this.pendingSince < this.o.debounceMs) return
+      if (this.mode === 'yielded') this.setMode('armed')
+      await this.resolveAndApply(np, now)
+    } finally {
+      this.ticking = false
+    }
   }
 
-  private async resolveAndApply(np: NowPlaying): Promise<void> {
+  private async resolveAndApply(np: NowPlaying, now: number): Promise<void> {
     if (!this.o.lifecycle.engaged) return // never grabs audio
     const profile = this.o.lifecycle.activeProfile
     if (!profile) return
@@ -85,19 +97,20 @@ export class AutoDJ extends EventEmitter {
     let slug: string | null = null
     if (this.o.store.getPreset(trackSlug)) slug = trackSlug
     else if (np.album && this.o.store.getPreset(albumSlug)) slug = albumSlug
-    else slug = await this.generateAndStore(np, profile, trackSlug)
+    else slug = await this.generateAndStore(np, profile, trackSlug, now)
 
     if (!slug) return
     this.initiatedSlug = slug
     try {
       await this.o.lifecycle.applyPreset(slug)
       this.lastAppliedTrackId = np.trackId
-    } catch { /* keep current EQ on apply failure */ }
+    } catch {
+      // apply failed — leave lastAppliedTrackId unset so the next tick retries this track
+    }
   }
 
-  private async generateAndStore(np: NowPlaying, profile: Profile, slug: string): Promise<string | null> {
+  private async generateAndStore(np: NowPlaying, profile: Profile, slug: string, now: number): Promise<string | null> {
     if (np.trackId != null && this.inFlight.has(np.trackId)) return null
-    const now = Date.now()
     this.genTimestamps = this.genTimestamps.filter((t) => now - t < 3_600_000)
     if (this.genTimestamps.length >= this.o.maxGenPerHour) return this.albumFallback(np)
     if (np.trackId != null) this.inFlight.add(np.trackId)
@@ -105,6 +118,7 @@ export class AutoDJ extends EventEmitter {
     try {
       const preset = await this.o.generate(np, profile, { slug })
       await this.o.store.createPreset(preset, { clamp: true })
+      // only count successful generates against the hourly budget
       this.genTimestamps.push(now)
       return slug
     } catch {
