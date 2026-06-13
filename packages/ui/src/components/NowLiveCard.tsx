@@ -12,6 +12,7 @@ import { AlbumArt } from './FallbackArt.js'
 import { EqCurveCanvas } from './EqCurveCanvas.js'
 import { Meters } from './Meters.js'
 import { BandChips } from './BandChips.js'
+import { Visualizer } from './Visualizer.js'
 
 export function NowLiveCard({
   status,
@@ -85,6 +86,9 @@ export function NowLiveCard({
             <EqCurveCanvas preset={preset} />
           </div>
         )}
+        <div className="hero-visualizer">
+          <Visualizer meters={meters} engaged={status.engaged} />
+        </div>
         {preset && preset.bands.length > 0 && (
           <BandChips bands={preset.bands} preamp={preset.preamp} />
         )}
