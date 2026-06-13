@@ -1,6 +1,6 @@
 /**
  * ArtistSection — one artist header + a flex row of AlbumDeck tiles.
- * Threads expandedAlbum / activeSlug / onToggle / onApply through to each deck.
+ * Threads expandedAlbum / activeSlug / onToggle / onApply / onEdit through to each deck.
  */
 import type { ArtistGroup } from '../library.js'
 import { AlbumDeck } from './AlbumDeck.js'
@@ -11,12 +11,14 @@ export function ArtistSection({
   activeSlug,
   onToggle,
   onApply,
+  onEdit,
 }: {
   group: ArtistGroup
   expandedAlbum: string | null
   activeSlug: string | null
   onToggle: (album: string) => void
   onApply: (slug: string) => void
+  onEdit: (slug: string) => void
 }) {
   return (
     <section className="sec-group">
@@ -30,6 +32,7 @@ export function ArtistSection({
             activeSlug={activeSlug}
             onToggle={onToggle}
             onApply={onApply}
+            onEdit={onEdit}
           />
         ))}
       </div>

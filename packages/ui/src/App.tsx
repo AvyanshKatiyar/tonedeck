@@ -41,7 +41,7 @@ function Shell() {
     [actions],
   )
 
-  useMeterFeed(actions.refreshStatus, onAutoWs)
+  const { meters } = useMeterFeed(actions.refreshStatus, onAutoWs)
 
   if (state.phase === 'unreachable') return <RetryPanel />
   if (state.phase === 'loading') {
@@ -65,11 +65,15 @@ function Shell() {
     void actions.applyPreset(slug)
   }
 
+  const handleEdit = (slug: string) => {
+    void actions.openDrawer(slug)
+  }
+
   return (
     <div className="app">
       <TopBar />
       {state.status && (
-        <NowLiveCard status={state.status} auto={state.auto} />
+        <NowLiveCard status={state.status} auto={state.auto} meters={meters} />
       )}
       <main className="library">
         <div className="library__toolbar">
@@ -95,6 +99,7 @@ function Shell() {
             activeSlug={activeSlug}
             onToggle={handleToggle}
             onApply={handleApply}
+            onEdit={handleEdit}
           />
         ))}
       </main>

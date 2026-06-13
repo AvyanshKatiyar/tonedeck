@@ -9,10 +9,12 @@ export function SongCard({
   song,
   live,
   onApply,
+  onEdit,
 }: {
   song: PresetSummary
   live: boolean
   onApply: (slug: string) => void
+  onEdit: (slug: string) => void
 }) {
   const statusLabel = live
     ? '● LIVE'
@@ -21,14 +23,25 @@ export function SongCard({
       : 'album'
 
   return (
-    <button
-      type="button"
-      className={`song${live ? ' song--live' : ''}`}
-      onClick={() => onApply(song.slug)}
-      title={song.title}
-    >
-      <div className="song__title">{song.title}</div>
-      <div className={`song__status${live ? ' song__status--live' : ''}`}>{statusLabel}</div>
-    </button>
+    <div className={`song${live ? ' song--live' : ''}`}>
+      <button
+        type="button"
+        className="song__apply"
+        onClick={() => onApply(song.slug)}
+        title={song.title}
+      >
+        <div className="song__title">{song.title}</div>
+        <div className={`song__status${live ? ' song__status--live' : ''}`}>{statusLabel}</div>
+      </button>
+      <button
+        type="button"
+        className="song__edit-btn"
+        onClick={(e) => { e.stopPropagation(); onEdit(song.slug) }}
+        title={`Edit EQ for ${song.title}`}
+        aria-label={`Edit EQ for ${song.title}`}
+      >
+        ✎
+      </button>
+    </div>
   )
 }

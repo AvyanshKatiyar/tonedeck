@@ -22,12 +22,14 @@ export function AlbumDeck({
   activeSlug,
   onToggle,
   onApply,
+  onEdit,
 }: {
   deck: AlbumDeckType
   expanded: boolean
   activeSlug: string | null
   onToggle: (album: string) => void
   onApply: (slug: string) => void
+  onEdit: (slug: string) => void
 }) {
   // Prefer the album slug for artwork lookup; fall back to first song slug
   const artSlug = deck.albumSlug ?? deck.songs[0]?.slug ?? deck.album
@@ -37,15 +39,28 @@ export function AlbumDeck({
   return (
     <div className={`deck${expanded ? ' deck--expanded' : ''}${albumIsLive ? ' deck--live' : ''}`}>
       {/* Stacked cover — clicking toggles expand */}
-      <button
-        type="button"
-        className="deck__cover"
-        onClick={() => onToggle(deck.album)}
-        aria-label={expanded ? `Collapse ${deck.album}` : `Expand ${deck.album}`}
-        aria-expanded={expanded}
-      >
-        <AlbumArt slug={artSlug} title={deck.album} src={api.artworkUrl(artSlug)} fontSize={22} />
-      </button>
+      <div className="deck__cover-wrap">
+        <button
+          type="button"
+          className="deck__cover"
+          onClick={() => onToggle(deck.album)}
+          aria-label={expanded ? `Collapse ${deck.album}` : `Expand ${deck.album}`}
+          aria-expanded={expanded}
+        >
+          <AlbumArt slug={artSlug} title={deck.album} src={api.artworkUrl(artSlug)} fontSize={22} />
+        </button>
+        {deck.albumSlug && (
+          <button
+            type="button"
+            className="deck__edit-btn"
+            onClick={(e) => { e.stopPropagation(); onEdit(deck.albumSlug!) }}
+            title={`Edit album EQ for ${deck.album}`}
+            aria-label={`Edit album EQ for ${deck.album}`}
+          >
+            ✎
+          </button>
+        )}
+      </div>
 
       {/* Album name + count */}
       <div className="deck__meta">
@@ -66,6 +81,7 @@ export function AlbumDeck({
                 song={deck.albumPreset}
                 live={albumIsLive}
                 onApply={onApply}
+                onEdit={onEdit}
               />
             )}
             {deck.songs.map((song) => (
@@ -74,6 +90,7 @@ export function AlbumDeck({
                 song={song}
                 live={song.slug === activeSlug}
                 onApply={onApply}
+                onEdit={onEdit}
               />
             ))}
           </div>

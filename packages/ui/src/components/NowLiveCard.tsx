@@ -6,7 +6,8 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { api } from '../api.js'
-import type { Preset, Status } from '../types.js'
+import { useStore } from '../store.js'
+import type { Meters as MeterFrame, Preset, Status } from '../types.js'
 import { AlbumArt } from './FallbackArt.js'
 import { EqCurveCanvas } from './EqCurveCanvas.js'
 import { Meters } from './Meters.js'
@@ -15,10 +16,13 @@ import { BandChips } from './BandChips.js'
 export function NowLiveCard({
   status,
   auto,
+  meters,
 }: {
   status: Status
   auto: { mode: string; generating?: boolean }
+  meters: MeterFrame | null
 }) {
+  const { state, actions } = useStore()
   const [preset, setPreset] = useState<Preset | null>(null)
   // Track the last requested slug so stale fetches don't overwrite newer state.
   const pendingSlug = useRef<string | null>(null)
@@ -84,15 +88,23 @@ export function NowLiveCard({
         {preset && preset.bands.length > 0 && (
           <BandChips bands={preset.bands} preamp={preset.preamp} />
         )}
+        <button
+          type="button"
+          className="btn btn--edit-eq"
+          onClick={() => void actions.openDrawer(slug)}
+          title="Edit EQ bands, vibe sliders, and save"
+        >
+          ✎ Edit EQ
+        </button>
       </div>
 
       {/* Right: meters */}
       <div className="hero-meters">
         <Meters
-          meters={null}
+          meters={meters}
           clipped={status.clippedSamples}
-          clipAck={0}
-          onAckClip={() => undefined}
+          clipAck={state.clipAck}
+          onAckClip={actions.ackClip}
           engaged={status.engaged}
         />
       </div>
