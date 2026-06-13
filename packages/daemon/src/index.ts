@@ -136,9 +136,11 @@ export async function buildServer(opts: BuildServerOpts = {}) {
       await fsp.rename(tmp, autoStatePath)
     }
     if (autoEnabled) autodj.arm()
-    const pollMs = Number(process.env.TONEDECK_AUTO_POLL_MS ?? 2000)
+    const rawPoll = Number(process.env.TONEDECK_AUTO_POLL_MS ?? 2000)
+    const pollMs = Number.isFinite(rawPoll) && rawPoll > 0 ? rawPoll : 2000
     const autoTimer = setInterval(() => { void autodj.tick() }, pollMs)
     autoTimer.unref?.()
+    server.addHook('onClose', async () => { clearInterval(autoTimer) })
 
     const meters = opts._meters ?? new MeterBroadcaster({ lifecycle, autoSource: autodj })
 

@@ -33,6 +33,7 @@ class FakeLifecycle extends EventEmitter {
   engaged = false
   cdsp = null
   activePreset: string | null = null
+  activeProfile: null = null
   engageError?: Error
   applyError?: Error
   previewError?: Error
