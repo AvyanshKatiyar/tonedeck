@@ -100,4 +100,7 @@ export const api = {
   setAuto: (on: boolean) =>
     req<{ mode: 'off' | 'armed' | 'yielded'; following: boolean }>('/api/auto', json({ on })),
   autoNow: () => req<{ mode: string; following: boolean }>('/api/auto/now', json({})),
+
+  optimizePreamp: (preset: Preset, targetPreamp: number) =>
+    req<{ preset: Preset }>('/api/optimize-preamp', json({ preset, targetPreamp })),
 }

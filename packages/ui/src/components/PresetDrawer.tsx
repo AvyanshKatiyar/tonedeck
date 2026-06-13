@@ -36,7 +36,7 @@ const fmt = (n: number, signed = false) =>
 
 export function PresetDrawer() {
   const { state, actions } = useStore()
-  const { drawerSlug, base, draft, status } = state
+  const { drawerSlug, base, draft, status, profile, optimizingPreamp } = state
   const [reason, setReason] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -80,6 +80,47 @@ export function PresetDrawer() {
           <p className="drawer__intent">{base.intent}</p>
 
           <VibeSliders />
+
+          <div className="preamp-section">
+            <div className="preamp-section__head">
+              <label htmlFor="preamp-slider" className="preamp-section__label">
+                Preamp / Loudness
+              </label>
+              <span className="preamp-section__val">
+                {draft.preamp >= 0 ? '+' : ''}{draft.preamp.toFixed(1)} dB
+              </span>
+            </div>
+            <input
+              id="preamp-slider"
+              type="range"
+              className="preamp-slider"
+              min={profile?.limits.preampDb[0] ?? -12}
+              max={profile?.limits.preampDb[1] ?? 4}
+              step={0.5}
+              value={draft.preamp}
+              onChange={(e) => actions.setDraft({ ...draft, preamp: Number(e.target.value) })}
+            />
+            <div className="preamp-section__optimize">
+              <button
+                type="button"
+                className="btn btn--optimize"
+                disabled={optimizingPreamp}
+                onClick={() => void actions.optimizeForPreamp()}
+              >
+                {optimizingPreamp ? (
+                  <>
+                    <span className="btn--optimize__spinner" aria-hidden />
+                    Optimizing…
+                  </>
+                ) : (
+                  'Optimize for loudness'
+                )}
+              </button>
+              <p className="preamp-section__hint">
+                Re-balances the bands for this preamp via Sonnet (~10s).
+              </p>
+            </div>
+          </div>
 
           <div className="drawer__save">
             <input

@@ -157,6 +157,26 @@ export function createActions(
     },
     setAddOpen: (open) => dispatch({ t: 'add', open }),
     ackClip: () => dispatch({ t: 'clipAck', value: ref.current.status?.clippedSamples ?? 0 }),
+    optimizeForPreamp: async () => {
+      const { draft } = ref.current
+      if (!draft) return
+      dispatch({ t: 'optimizingPreamp', on: true })
+      try {
+        const r = await api.optimizePreamp(draft, draft.preamp)
+        dispatch({ t: 'draft', draft: r.preset })
+        if (ref.current.status?.engaged) {
+          try {
+            await api.preview(r.preset)
+          } catch {
+            /* preview is non-fatal; the curve already updated locally */
+          }
+        }
+      } catch (e) {
+        fail(e)
+      } finally {
+        dispatch({ t: 'optimizingPreamp', on: false })
+      }
+    },
     setAuto: async (on) => {
       try {
         const r = await api.setAuto(on)

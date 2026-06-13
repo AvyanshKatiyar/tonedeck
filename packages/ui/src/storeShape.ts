@@ -31,6 +31,7 @@ export interface State {
   vibes: Record<VibeName, number>
   addOpen: boolean
   applyingSlug: string | null
+  optimizingPreamp: boolean
   toasts: Toast[]
   clipAck: number
 }
@@ -47,6 +48,7 @@ export const initial: State = {
   vibes: ZERO_VIBES,
   addOpen: false,
   applyingSlug: null,
+  optimizingPreamp: false,
   toasts: [],
   clipAck: 0,
 }
@@ -64,6 +66,7 @@ export type Action =
   | { t: 'revert' }
   | { t: 'add'; open: boolean }
   | { t: 'applying'; slug: string | null }
+  | { t: 'optimizingPreamp'; on: boolean }
   | { t: 'toast'; toast: Toast }
   | { t: 'untoast'; id: number }
   | { t: 'clipAck'; value: number }
@@ -94,6 +97,8 @@ export function reducer(s: State, a: Action): State {
       return { ...s, addOpen: a.open }
     case 'applying':
       return { ...s, applyingSlug: a.slug }
+    case 'optimizingPreamp':
+      return { ...s, optimizingPreamp: a.on }
     case 'toast':
       return { ...s, toasts: [...s.toasts, a.toast] }
     case 'untoast':
@@ -128,4 +133,5 @@ export interface Actions {
   deletePreset: () => Promise<void>
   setAddOpen: (open: boolean) => void
   ackClip: () => void
+  optimizeForPreamp: () => Promise<void>
 }

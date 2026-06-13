@@ -1698,3 +1698,126 @@ button {
   font-style: italic;
   padding-right: 4px;
 }
+
+/* ── Drawer: Preamp/Loudness slider + Optimize button ────────────────────── */
+.preamp-section {
+  margin-top: 22px;
+  padding: 14px;
+  background: rgba(212, 162, 89, 0.06);
+  border: 1px solid rgba(212, 162, 89, 0.18);
+  border-radius: var(--radius);
+}
+
+.preamp-section__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 4px;
+}
+
+.preamp-section__label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.preamp-section__val {
+  font-size: 12px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Preamp range slider — amber track fill + thumb */
+.preamp-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  margin: 8px 0 4px;
+  background: rgba(212, 162, 89, 0.22);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.preamp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 6px rgba(212, 162, 89, 0.55);
+  cursor: pointer;
+  transition: box-shadow var(--t);
+}
+
+.preamp-slider::-webkit-slider-thumb:hover {
+  box-shadow: 0 0 10px rgba(212, 162, 89, 0.75);
+}
+
+.preamp-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  box-shadow: 0 0 6px rgba(212, 162, 89, 0.55);
+  cursor: pointer;
+}
+
+.preamp-slider::-moz-range-track {
+  background: rgba(212, 162, 89, 0.22);
+  border-radius: 3px;
+  height: 4px;
+}
+
+.preamp-section__optimize {
+  margin-top: 12px;
+}
+
+.btn--optimize {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(212, 162, 89, 0.12);
+  border: 1px solid rgba(212, 162, 89, 0.4);
+  color: var(--accent);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  width: 100%;
+  justify-content: center;
+  transition: background var(--t), border-color var(--t), opacity var(--t);
+}
+
+.btn--optimize:hover:not(:disabled) {
+  background: rgba(212, 162, 89, 0.22);
+  border-color: var(--accent);
+}
+
+.btn--optimize:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Inline spinner for the Optimizing… state */
+.btn--optimize__spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(212, 162, 89, 0.35);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.preamp-section__hint {
+  margin: 8px 0 0;
+  font-size: 11px;
+  color: var(--dim);
+  line-height: 1.4;
+}
