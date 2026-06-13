@@ -7,6 +7,7 @@
 export const VERSION = '0.1.0'
 
 export * from './preset.js'
+export * from './slug.js'
 export * from './biquad.js'
 export * from './safety.js'
 export * from './vibes.js'

@@ -54,6 +54,7 @@ export const PresetSchema = z.object({
   kind: z.enum(['album', 'track', 'genre', 'mood']),
   title: z.string().min(1),
   artist: z.string().optional(),
+  album: z.string().optional(),
   profile: z.string(),
   preamp: z.number().min(-24).max(24),
   bands: z

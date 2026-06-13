@@ -75,6 +75,23 @@ describe('profile schema', () => {
   })
 })
 
+const albumBase = {
+  schemaVersion: 1, slug: 'nas-lifes-a-bitch', kind: 'track', title: "Life's a Bitch",
+  artist: 'Nas', profile: 'ft1-pro', preamp: -3,
+  bands: [{ id: 'b1', type: 'lowshelf', freq: 80, q: 0.7, gain: 3 }],
+  intent: 'warmth', provenance: { createdBy: 'claude', history: [] },
+  version: 1, createdAt: '2026-06-13T00:00:00.000Z', updatedAt: '2026-06-13T00:00:00.000Z',
+}
+
+describe('PresetSchema album field', () => {
+  it('accepts and preserves album', () => {
+    expect(parsePreset({ ...albumBase, album: 'Illmatic' }).album).toBe('Illmatic')
+  })
+  it('remains optional', () => {
+    expect(parsePreset(albumBase).album).toBeUndefined()
+  })
+})
+
 describe('JSON-Schema export', () => {
   it('presetJsonSchema() returns an object with expected top-level keys', () => {
     const schema = presetJsonSchema() as Record<string, unknown>

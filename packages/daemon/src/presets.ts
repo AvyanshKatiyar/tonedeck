@@ -39,6 +39,7 @@ export interface PresetSummary {
   kind: string
   title: string
   artist?: string
+  album?: string
   intent: string
   version: number
   profile: string
@@ -140,6 +141,7 @@ export class PresetStore {
         kind: p.kind,
         title: p.title,
         artist: p.artist,
+        album: p.album,
         intent: p.intent,
         version: p.version,
         profile: p.profile,
