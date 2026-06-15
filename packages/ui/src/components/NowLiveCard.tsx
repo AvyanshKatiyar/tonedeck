@@ -22,7 +22,7 @@ export function NowLiveCard({
   auto: { mode: string; generating?: boolean }
   meters: MeterFrame | null
 }) {
-  const { actions } = useStore()
+  const { state, actions } = useStore()
   const [preset, setPreset] = useState<Preset | null>(null)
   // Track the last requested slug so stale fetches don't overwrite newer state.
   const pendingSlug = useRef<string | null>(null)
@@ -57,12 +57,17 @@ export function NowLiveCard({
   }
 
   const slug = status.activePreset
-  const title = preset?.title ?? slug
-  const hasSubtitle = preset?.artist || preset?.album
+  // When the console is editing the active preset, mirror its live draft so the
+  // hero's curve + band chips + preamp tag track edits in real time (otherwise
+  // the hero shows the independently-fetched, possibly stale, saved preset).
+  const livePreset =
+    state.drawerSlug === slug && state.draft ? state.draft : preset
+  const title = livePreset?.title ?? slug
+  const hasSubtitle = livePreset?.artist || livePreset?.album
   const subtitle = hasSubtitle
-    ? [preset?.artist, preset?.album].filter(Boolean).join(' — ')
+    ? [livePreset?.artist, livePreset?.album].filter(Boolean).join(' — ')
     : null
-  const isAuto = preset?.provenance?.createdBy === 'claude'
+  const isAuto = livePreset?.provenance?.createdBy === 'claude'
 
   return (
     <div className="hero">
@@ -85,13 +90,13 @@ export function NowLiveCard({
         <div className="hero-visualizer">
           <Visualizer meters={meters} engaged={status.engaged} />
         </div>
-        {preset && (
+        {livePreset && (
           <div className="hero-curve">
-            <EqCurveCanvas preset={preset} />
+            <EqCurveCanvas preset={livePreset} />
           </div>
         )}
-        {preset && preset.bands.length > 0 && (
-          <BandChips bands={preset.bands} preamp={preset.preamp} />
+        {livePreset && livePreset.bands.length > 0 && (
+          <BandChips bands={livePreset.bands} preamp={livePreset.preamp} />
         )}
         <button
           type="button"

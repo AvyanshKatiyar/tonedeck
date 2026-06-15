@@ -148,12 +148,12 @@ export function Visualizer({
       const barW = (w - totalGap) / N_BARS
       const radius = Math.min(barW / 2, 3)
 
-      // Spotify-green gradient (vertical, top of tallest bar to bottom):
-      // brighter green at the peak fading to a dim green base.
+      // Warm ember gradient (vertical, top of tallest bar to bottom):
+      // brighter amber at the peak fading to a dim ember base.
       const grad = ctx!.createLinearGradient(0, 0, 0, h)
-      grad.addColorStop(0, '#1fdf64')   // bright green (top / peak)
-      grad.addColorStop(0.45, '#1ed760') // accent green (mid)
-      grad.addColorStop(1, 'rgba(30,215,96,0.32)') // dim at base
+      grad.addColorStop(0, '#ffb07a')   // bright amber (top / peak)
+      grad.addColorStop(0.45, '#ff8a4c') // accent ember (mid)
+      grad.addColorStop(1, 'rgba(255,138,76,0.32)') // dim at base
 
       ctx!.fillStyle = grad
 

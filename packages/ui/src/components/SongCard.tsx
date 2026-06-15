@@ -1,9 +1,12 @@
 /**
  * SongCard — one row in an expanded album's track list (Spotify-style).
- * Columns: index (an animated equalizer when live) · title · state · edit.
+ * Columns: index (animated equalizer when live) · cover · title · state · edit.
+ * The cover falls back to a deterministic tile when artwork is missing.
  * Lightweight: only PresetSummary fields (no bands), so no per-card API call.
  */
+import { api } from '../api.js'
 import type { PresetSummary } from '../types.js'
+import { AlbumArt } from './FallbackArt.js'
 
 export function SongCard({
   song,
@@ -32,6 +35,9 @@ export function SongCard({
         ) : (
           index
         )}
+      </div>
+      <div className="song__art">
+        <AlbumArt slug={song.slug} title={song.title} src={api.artworkUrl(song.slug)} fontSize={14} />
       </div>
       <button
         type="button"

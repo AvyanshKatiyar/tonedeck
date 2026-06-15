@@ -51,6 +51,7 @@ export function ArtistSection({
         <div className="expand">
           <div className="expand__head">
             <span>#</span>
+            <span aria-hidden />
             <span>{openDeck.album}</span>
             <span>State</span>
           </div>

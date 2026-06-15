@@ -30,6 +30,23 @@ export function NowPlayingBar({ meters }: { meters: MeterFrame | null }) {
   // Progress fill tracks the louder channel's RMS.
   const level = engaged && meters ? Math.max(pct(meters.rms[0]), pct(meters.rms[1])) : 0
 
+  // Transport: shuffle / prev / next cycle through the preset library, applying
+  // each (which goes live). Order mirrors the daemon's title-sorted list.
+  const slugs = presets.map((p) => p.slug)
+  const activeIdx = status?.activePreset ? slugs.indexOf(status.activePreset) : -1
+  const canNav = slugs.length > 0
+  const goTo = (delta: number) => {
+    if (!slugs.length) return
+    const base = activeIdx < 0 ? 0 : activeIdx
+    void actions.applyPreset(slugs[(base + delta + slugs.length) % slugs.length])
+  }
+  const shuffle = () => {
+    if (!slugs.length) return
+    let n = Math.floor(Math.random() * slugs.length)
+    if (n === activeIdx && slugs.length > 1) n = (n + 1) % slugs.length
+    void actions.applyPreset(slugs[n])
+  }
+
   return (
     <footer className="npbar">
       {/* ── Left: track ──────────────────────────────────────────────── */}
@@ -62,10 +79,10 @@ export function NowPlayingBar({ meters }: { meters: MeterFrame | null }) {
       {/* ── Centre: transport + progress ─────────────────────────────── */}
       <div className="npbar__center">
         <div className="npbar__controls">
-          <button type="button" className="np-ctl" disabled title="Shuffle" aria-label="Shuffle">
+          <button type="button" className="np-ctl" disabled={!canNav} onClick={shuffle} title="Shuffle — random preset" aria-label="Shuffle">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 4h5v5h-2V7.4l-4.3 4.3-1.4-1.4L17.6 6H16V4ZM3 6h4.6l3.3 3.3-1.4 1.4L6.6 8H3V6Zm0 10h4.6l11-11H21v5h-2V7.4L9.4 17H3v-1Zm14.6 0L16 14.4 17.4 13l4.3 4.3V15.6h2V21h-5v-2h1.6Z"/></svg>
           </button>
-          <button type="button" className="np-ctl" disabled title="Previous" aria-label="Previous">
+          <button type="button" className="np-ctl" disabled={!canNav} onClick={() => goTo(-1)} title="Previous preset" aria-label="Previous">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 5h2v14H7V5Zm10 0v14l-8-7 8-7Z"/></svg>
           </button>
           <button
@@ -81,7 +98,7 @@ export function NowPlayingBar({ meters }: { meters: MeterFrame | null }) {
               <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5Z" /></svg>
             )}
           </button>
-          <button type="button" className="np-ctl" disabled title="Next" aria-label="Next">
+          <button type="button" className="np-ctl" disabled={!canNav} onClick={() => goTo(1)} title="Next preset" aria-label="Next">
             <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15 5h2v14h-2V5ZM7 5l8 7-8 7V5Z"/></svg>
           </button>
           <button

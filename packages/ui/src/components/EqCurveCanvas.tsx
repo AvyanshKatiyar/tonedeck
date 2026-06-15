@@ -13,7 +13,7 @@ const FREQ: [number, number] = [20, 20000]
 const DB: [number, number] = [-9, 9]
 const PAD = { left: 28, right: 10, top: 10, bottom: 18 }
 
-const ACCENT = '#1ed760'
+const ACCENT = '#ff8a4c'
 const GRID = 'rgba(255,255,255,0.08)'
 const ZERO = 'rgba(255,255,255,0.28)'
 const LABEL = 'rgba(255,255,255,0.4)'
@@ -94,7 +94,7 @@ export function EqCurveCanvas({ preset }: { preset: Pick<Preset, 'bands' | 'prea
       ctx.lineTo(ox + curve[curve.length - 1][0], zeroY)
       ctx.lineTo(ox + curve[0][0], zeroY)
       ctx.closePath()
-      ctx.fillStyle = 'rgba(30,215,96,0.14)'
+      ctx.fillStyle = 'rgba(255,138,76,0.16)'
       ctx.fill()
 
       // Curve stroke.

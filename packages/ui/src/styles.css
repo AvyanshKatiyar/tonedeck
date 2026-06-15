@@ -1,12 +1,12 @@
 /* ToneDeck — Spotify-equivalent dark UI.
    Three-panel app shell (Your Library · main scroll · Now-Playing view) over a
    full-width bottom player bar, pitch-black gutters, elevated #181818 cards with
-   the signature hover-reveal green play button, and a green-tinted top gradient.
-   Type: Montserrat (a Circular substitute). One accent: Spotify green. */
+   the signature hover-reveal warm play button, and a warm-tinted top gradient.
+   Type: Montserrat (a Circular substitute). One accent: warm ember orange. */
 
 /* ── Design tokens ──────────────────────────────────────────────────────────
    Spotify's actual palette: black chrome, #121212 panels, #181818 cards that
-   lift to #282828, white text on #b3b3b3 subdued, and the #1ed760 green. */
+   lift to #282828, white text on #b3b3b3 subdued, and a warm #ff8a4c accent. */
 :root {
   --black: #000000;
   --base: #121212;          /* panel ground */
@@ -22,11 +22,11 @@
   --line: rgba(255, 255, 255, 0.08);
   --line-strong: rgba(255, 255, 255, 0.14);
 
-  --accent: #1ed760;        /* Spotify green */
-  --accent-hi: #1fdf64;     /* brighter on hover */
-  --accent-press: #169c46;
-  --accent-on: #000000;     /* text/icon on green */
-  --accent-soft: rgba(30, 215, 96, 0.12);
+  --accent: #ff8a4c;        /* warm ember orange */
+  --accent-hi: #ff9e68;     /* brighter on hover */
+  --accent-press: #e66c2a;
+  --accent-on: #2a1404;     /* dark warm text/icon on the accent */
+  --accent-soft: rgba(255, 138, 76, 0.14);
 
   --danger: #e22134;
   --danger-soft: rgba(226, 33, 52, 0.16);
@@ -78,7 +78,7 @@ button {
 }
 
 ::selection {
-  background: rgba(30, 215, 96, 0.32);
+  background: rgba(255, 138, 76, 0.32);
 }
 
 /* Thin Spotify-style scrollbars, hidden until hover */
@@ -329,7 +329,7 @@ button {
   line-height: 1.5;
 }
 
-/* ── Main panel — green-tinted top gradient, sticky transparent header ─────── */
+/* ── Main panel — warm-tinted top gradient, sticky transparent header ──────── */
 .main {
   background: var(--base);
   border-radius: var(--radius-panel);
@@ -349,8 +349,8 @@ button {
   position: relative;
   background: linear-gradient(
     180deg,
-    rgba(30, 140, 80, 0.55) 0%,
-    rgba(25, 90, 58, 0.32) 22%,
+    rgba(168, 86, 42, 0.55) 0%,
+    rgba(120, 62, 34, 0.32) 22%,
     rgba(18, 18, 18, 0) 46%
   );
   padding-top: var(--topbar-h);
@@ -436,6 +436,9 @@ button {
   background: rgba(0, 0, 0, 0.8);
   transform: scale(1.05);
 }
+.tb__icon--on {
+  color: var(--accent);
+}
 .tb__avatar {
   width: 32px;
   height: 32px;
@@ -454,7 +457,7 @@ button {
   transform: scale(1.05);
 }
 
-/* ── AutoToggle — styled as a Spotify-green follow pill ───────────────────── */
+/* ── AutoToggle — styled as a warm follow pill ───────────────────── */
 .auto-toggle {
   display: flex;
   flex-direction: column;
@@ -590,7 +593,7 @@ button {
   outline-offset: 2px;
 }
 
-/* The signature green circular play button (used on cards/decks) */
+/* The signature warm circular play button (used on cards/decks) */
 .play-fab {
   position: absolute;
   right: 12px;
@@ -700,7 +703,7 @@ button {
   height: 8px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 10px rgba(30, 215, 96, 0.7);
+  box-shadow: 0 0 10px rgba(255, 138, 76, 0.7);
 }
 .hero-title {
   font-size: clamp(32px, 4vw, 64px);
@@ -725,10 +728,10 @@ button {
 }
 .hero-curve {
   margin: 12px 0 6px;
-  max-width: 620px;
+  width: 100%;
 }
 .hero-curve .eq-canvas {
-  height: 96px;
+  height: 132px;
   background: rgba(0, 0, 0, 0.22);
   border-color: rgba(255, 255, 255, 0.08);
 }
@@ -761,9 +764,8 @@ button {
 }
 .hero-visualizer {
   width: 100%;
-  max-width: 620px;
-  height: 40px;
-  margin: 2px 0 6px;
+  height: 44px;
+  margin: 2px 0 8px;
   flex-shrink: 0;
 }
 .visualizer-canvas {
@@ -985,7 +987,7 @@ button {
 }
 .expand__head {
   display: grid;
-  grid-template-columns: 28px 1fr auto;
+  grid-template-columns: 28px 40px 1fr auto;
   gap: 12px;
   align-items: center;
   padding: 8px 18px;
@@ -1003,19 +1005,27 @@ button {
 .song {
   position: relative;
   display: grid;
-  grid-template-columns: 28px 1fr auto auto;
+  grid-template-columns: 28px 40px 1fr auto auto;
   gap: 12px;
   align-items: center;
   border-radius: 4px;
   padding: 0 12px;
-  min-height: 48px;
+  min-height: 56px;
   transition: background var(--t-fast);
+}
+.song__art {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-art);
+  overflow: hidden;
+  background: var(--elevated-hi);
+  flex-shrink: 0;
 }
 .song:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 .song--live {
-  background: rgba(30, 215, 96, 0.08);
+  background: rgba(255, 138, 76, 0.1);
 }
 .song__index {
   display: grid;
@@ -2110,6 +2120,17 @@ button {
   margin: 0 0 10px;
   font-size: 13px;
   color: var(--muted);
+}
+
+/* Right Now-Playing panel hidden via the header toggle */
+.app--no-right {
+  grid-template-columns: 280px minmax(0, 1fr);
+  grid-template-areas:
+    "sidebar main"
+    "player  player";
+}
+.app--no-right .rightpanel {
+  display: none;
 }
 
 /* ── Responsive: drop the right panel, then the sidebar ───────────────────── */

@@ -46,6 +46,17 @@ function Shell() {
   const [expandedAlbum, setExpandedAlbum] = useState<string | null>(null)
   // followingLive: when true the console auto-tracks state.status.activePreset.
   const [followingLive, setFollowingLive] = useState(true)
+  // Right Now-Playing panel visibility (toggled from the TopBar).
+  const [nowPlayingOpen, setNowPlayingOpen] = useState(true)
+  const mainScrollRef = useRef<HTMLDivElement>(null)
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  const scrollMain = (dir: number) =>
+    mainScrollRef.current?.scrollBy({ top: dir * window.innerHeight * 0.8, behavior: 'smooth' })
+  const focusSearch = () => {
+    mainScrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+    searchRef.current?.focus()
+  }
 
   // Stable ref so the effect closure never stales over state/actions identity.
   const followingLiveRef = useRef(followingLive)
@@ -127,18 +138,24 @@ function Shell() {
   )
 
   return (
-    <div className="app">
+    <div className={`app${nowPlayingOpen ? '' : ' app--no-right'}`}>
       <Sidebar
         groups={groups}
         activeSlug={activeSlug}
         onApply={handleApply}
         onEdit={handleEdit}
         onAdd={() => actions.setAddOpen(true)}
+        onSearch={focusSearch}
       />
 
       <div className="main">
-        <TopBar />
-        <div className="main__scroll">
+        <TopBar
+          onBack={() => scrollMain(-1)}
+          onForward={() => scrollMain(1)}
+          onToggleNowPlaying={() => setNowPlayingOpen((o) => !o)}
+          nowPlayingOpen={nowPlayingOpen}
+        />
+        <div className="main__scroll" ref={mainScrollRef}>
           <div className="main__wash">
             {state.status && (
               <NowLiveCard status={state.status} auto={state.auto} meters={meters} />
@@ -147,6 +164,7 @@ function Shell() {
           <main className="library">
             <div className="library__toolbar">
               <input
+                ref={searchRef}
                 className="library__search"
                 type="search"
                 placeholder="Search your tuned albums and songs"
@@ -175,13 +193,15 @@ function Shell() {
         </div>
       </div>
 
-      <aside className="rightpanel">
-        {state.drawerSlug ? (
-          <PresetDrawer followingLive={followingLive} onReturnToLive={handleReturnToLive} />
-        ) : (
-          consolePlaceholder
-        )}
-      </aside>
+      {nowPlayingOpen && (
+        <aside className="rightpanel">
+          {state.drawerSlug ? (
+            <PresetDrawer followingLive={followingLive} onReturnToLive={handleReturnToLive} />
+          ) : (
+            consolePlaceholder
+          )}
+        </aside>
+      )}
 
       <NowPlayingBar meters={meters} />
 
