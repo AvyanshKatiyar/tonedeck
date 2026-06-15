@@ -191,6 +191,23 @@ export class PresetStore {
     return { preset: final, warnings, verdict }
   }
 
+  /**
+   * Attach resolved artwork to a preset that has none, persisting it to disk
+   * without bumping the version or snapshotting history. Used by the artwork
+   * route to make a self-healed cover permanent. No-op when the slug is unknown
+   * or the preset already has an artwork url.
+   */
+  async attachArtwork(
+    slug: string,
+    artwork: { itunesCollectionId?: number; url: string },
+  ): Promise<void> {
+    const preset = this.presets.get(slug)
+    if (!preset || preset.artwork?.url) return
+    const updated: Preset = { ...preset, artwork }
+    await this._writePreset(updated)
+    this.presets.set(slug, updated)
+  }
+
   async updatePreset(
     slug: string,
     input: unknown,
