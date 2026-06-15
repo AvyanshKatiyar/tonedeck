@@ -1,13 +1,24 @@
 /**
- * NowPlayingBar — sticky 64px header. Left: active album thumb + title/artist +
- * engaged-state pill. Centre: live meters. Right: Bypass (A/B) toggle,
- * Engage/Disengage, and an always-visible PANIC button (instant, no confirm).
+ * NowPlayingBar — full-width bottom player, modelled on Spotify's playback bar.
+ *
+ * Left:   active album thumb + title/artist + an EQ-on/off heart.
+ * Centre: transport cluster (decorative shuffle/prev/next/repeat around the big
+ *         play/pause, which maps to Engage/Disengage) over a progress line whose
+ *         fill tracks the live output level.
+ * Right:  A/B bypass, a compact level meter, and an always-live PANIC button.
  */
 import { api } from '../api.js'
 import { useStore } from '../store.js'
 import type { Meters as MeterFrame } from '../types.js'
 import { AlbumArt, FallbackArt } from './FallbackArt.js'
 import { Meters } from './Meters.js'
+
+const FLOOR = -60
+/** dBFS → 0..100 % (mirrors Meters.pct). */
+function pct(db: number): number {
+  if (!Number.isFinite(db)) return 0
+  return Math.max(0, Math.min(1, (db - FLOOR) / (0 - FLOOR))) * 100
+}
 
 export function NowPlayingBar({ meters }: { meters: MeterFrame | null }) {
   const { state, actions } = useStore()
@@ -16,43 +27,84 @@ export function NowPlayingBar({ meters }: { meters: MeterFrame | null }) {
   const bypass = status?.bypass ?? false
   const active = presets.find((p) => p.slug === status?.activePreset) ?? null
 
-  let pill: { text: string; cls: string }
-  if (!engaged) pill = { text: 'OFF', cls: 'pill--off' }
-  else if (bypass) pill = { text: 'BYPASS', cls: 'pill--bypass' }
-  else pill = { text: 'LIVE', cls: 'pill--live' }
+  // Progress fill tracks the louder channel's RMS.
+  const level = engaged && meters ? Math.max(pct(meters.rms[0]), pct(meters.rms[1])) : 0
 
   return (
-    <header className="npbar">
+    <footer className="npbar">
+      {/* ── Left: track ──────────────────────────────────────────────── */}
       <div className="npbar__left">
         <div className="npbar__thumb">
           {active ? (
-            <AlbumArt slug={active.slug} title={active.title} src={api.artworkUrl(active.slug)} fontSize={15} />
+            <AlbumArt slug={active.slug} title={active.title} src={api.artworkUrl(active.slug)} fontSize={18} />
           ) : (
-            <FallbackArt slug="tonedeck" title="ToneDeck" fontSize={13} />
+            <FallbackArt slug="tonedeck" title="ToneDeck" fontSize={15} />
           )}
         </div>
         <div className="npbar__meta">
           <div className="npbar__title">{active ? active.title : 'No album engaged'}</div>
           <div className="npbar__artist">
-            {active ? active.artist ?? '—' : 'Click any album to go live'}
+            {active ? active.artist ?? '—' : 'Pick an album to go live'}
           </div>
         </div>
-        <span className={`pill ${pill.cls}`}>
-          {pill.text === 'LIVE' && <span className="pill__dot" />}
-          {pill.text}
-        </span>
+        <button
+          type="button"
+          className={`npbar__like${engaged && !bypass ? ' is-on' : ''}`}
+          disabled={!engaged}
+          onClick={() => actions.bypass(!bypass)}
+          title={bypass ? 'EQ bypassed — click to enable' : 'EQ on — click to bypass'}
+          aria-label="Toggle EQ"
+        >
+          {engaged && !bypass ? '♥' : '♡'}
+        </button>
       </div>
 
+      {/* ── Centre: transport + progress ─────────────────────────────── */}
       <div className="npbar__center">
-        <Meters
-          meters={meters}
-          clipped={status?.clippedSamples ?? null}
-          clipAck={clipAck}
-          onAckClip={actions.ackClip}
-          engaged={engaged}
-        />
+        <div className="npbar__controls">
+          <button type="button" className="np-ctl" disabled title="Shuffle" aria-label="Shuffle">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M16 4h5v5h-2V7.4l-4.3 4.3-1.4-1.4L17.6 6H16V4ZM3 6h4.6l3.3 3.3-1.4 1.4L6.6 8H3V6Zm0 10h4.6l11-11H21v5h-2V7.4L9.4 17H3v-1Zm14.6 0L16 14.4 17.4 13l4.3 4.3V15.6h2V21h-5v-2h1.6Z"/></svg>
+          </button>
+          <button type="button" className="np-ctl" disabled title="Previous" aria-label="Previous">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 5h2v14H7V5Zm10 0v14l-8-7 8-7Z"/></svg>
+          </button>
+          <button
+            type="button"
+            className={`np-play${engaged ? '' : ' np-play--off'}`}
+            onClick={() => (engaged ? actions.disengage() : actions.engage())}
+            title={engaged ? 'Disengage EQ' : 'Engage EQ'}
+            aria-label={engaged ? 'Disengage' : 'Engage'}
+          >
+            {engaged ? (
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M7 5h4v14H7V5Zm6 0h4v14h-4V5Z" /></svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden><path d="M8 5v14l11-7L8 5Z" /></svg>
+            )}
+          </button>
+          <button type="button" className="np-ctl" disabled title="Next" aria-label="Next">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15 5h2v14h-2V5ZM7 5l8 7-8 7V5Z"/></svg>
+          </button>
+          <button
+            type="button"
+            className={`np-ctl${engaged && !bypass ? ' np-ctl--on' : ''}`}
+            disabled={!engaged}
+            onClick={() => actions.bypass(!bypass)}
+            title="A/B bypass — repeat the flat signal"
+            aria-label="A/B bypass"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M7 7h10v2.6l3-3-3-3V6H5v6h2V7Zm10 10H7v-2.6l-3 3 3 3V18h12v-6h-2v5Z"/></svg>
+          </button>
+        </div>
+        <div className="npbar__progress">
+          <span className="np-time">{engaged ? (bypass ? 'FLAT' : 'EQ') : 'OFF'}</span>
+          <div className="np-bar">
+            <div className="np-bar__fill" style={{ width: `${level}%` }} />
+          </div>
+          <span className="np-time">{status?.dspState ?? '—'}</span>
+        </div>
       </div>
 
+      {/* ── Right: bypass · level · panic ────────────────────────────── */}
       <div className="npbar__right">
         <button
           type="button"
@@ -63,17 +115,19 @@ export function NowPlayingBar({ meters }: { meters: MeterFrame | null }) {
         >
           {bypass ? 'A · flat' : 'B · EQ'}
         </button>
-        <button
-          type="button"
-          className={`btn ${engaged ? '' : 'btn--primary'}`}
-          onClick={() => (engaged ? actions.disengage() : actions.engage())}
-        >
-          {engaged ? 'Disengage' : 'Engage'}
-        </button>
+        <div className="npbar__level">
+          <Meters
+            meters={meters}
+            clipped={status?.clippedSamples ?? null}
+            clipAck={clipAck}
+            onAckClip={actions.ackClip}
+            engaged={engaged}
+          />
+        </div>
         <button type="button" className="btn btn--danger" onClick={() => actions.panic()}>
           PANIC
         </button>
       </div>
-    </header>
+    </footer>
   )
 }

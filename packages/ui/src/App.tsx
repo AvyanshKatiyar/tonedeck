@@ -1,8 +1,8 @@
 /**
- * App — top-level shell. Provides the store, drives the meter websocket, and
- * lays out the TopBar, NowLiveCard hero, grouped deck library, persistent EQ
- * console, add-album modal, toasts, and status footer. Renders a quiet
- * full-screen retry panel when the daemon can't be reached.
+ * App — Spotify-style three-pane shell. Left: Your Library sidebar. Centre:
+ * scrollable main with a green-tinted top gradient behind the Now-Live hero and
+ * the album grid. Right: the Now-Playing view (the persistent EQ console). A
+ * full-width player bar spans the bottom.
  *
  * Console follow logic:
  *   - followingLive (default true): the console auto-tracks the active preset
@@ -17,11 +17,13 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { StoreProvider, useMeterFeed, useStore } from './store.js'
 import { groupByArtist } from './library.js'
 import { TopBar } from './components/TopBar.js'
+import { Sidebar } from './components/Sidebar.js'
 import { NowLiveCard } from './components/NowLiveCard.js'
 import { ArtistSection } from './components/ArtistSection.js'
 import { PresetDrawer } from './components/PresetDrawer.js'
+import { NowPlayingBar } from './components/NowPlayingBar.js'
 import { AddAlbumModal } from './components/AddAlbumModal.js'
-import { Toasts, StatusFooter } from './components/Toasts.js'
+import { Toasts } from './components/Toasts.js'
 
 function RetryPanel() {
   return (
@@ -115,27 +117,39 @@ function Shell() {
 
   // Console placeholder when nothing is loaded.
   const consolePlaceholder = (
-    <aside className="console console--empty" aria-label="EQ Console">
+    <aside className="console console--empty" aria-label="Now playing view">
       <div className="console__placeholder">
-        No EQ loaded — play a song or pick one to edit
+        Nothing loaded.
+        <br />
+        Play a song or pick one to tune.
       </div>
     </aside>
   )
 
   return (
     <div className="app">
-      <TopBar />
-      <div className="app__body">
-        <div className="app__main">
-          {state.status && (
-            <NowLiveCard status={state.status} auto={state.auto} meters={meters} />
-          )}
+      <Sidebar
+        groups={groups}
+        activeSlug={activeSlug}
+        onApply={handleApply}
+        onEdit={handleEdit}
+        onAdd={() => actions.setAddOpen(true)}
+      />
+
+      <div className="main">
+        <TopBar />
+        <div className="main__scroll">
+          <div className="main__wash">
+            {state.status && (
+              <NowLiveCard status={state.status} auto={state.auto} meters={meters} />
+            )}
+          </div>
           <main className="library">
             <div className="library__toolbar">
               <input
                 className="library__search"
                 type="search"
-                placeholder="Filter by title or artist"
+                placeholder="Search your tuned albums and songs"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 aria-label="Filter presets"
@@ -159,20 +173,20 @@ function Shell() {
             ))}
           </main>
         </div>
-        <div className="app__console">
-          {state.drawerSlug ? (
-            <PresetDrawer
-              followingLive={followingLive}
-              onReturnToLive={handleReturnToLive}
-            />
-          ) : (
-            consolePlaceholder
-          )}
-        </div>
       </div>
+
+      <aside className="rightpanel">
+        {state.drawerSlug ? (
+          <PresetDrawer followingLive={followingLive} onReturnToLive={handleReturnToLive} />
+        ) : (
+          consolePlaceholder
+        )}
+      </aside>
+
+      <NowPlayingBar meters={meters} />
+
       {state.addOpen && <AddAlbumModal />}
       <Toasts />
-      <StatusFooter />
     </div>
   )
 }

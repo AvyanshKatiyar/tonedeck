@@ -1,7 +1,8 @@
 /**
- * TopBar — sticky header row. Serif ToneDeck wordmark with amber accent dot,
- * device/profile pill, AutoToggle, and a settings affordance. Matches the
- * Warm Editorial / Vinyl direction-2 mockup (.tb / .wm / .pill).
+ * TopBar — Spotify-style header that floats over the main panel's top gradient.
+ * Left: back/forward nav chevrons (presentational). Right: the active output
+ * device pill, the Auto-EQ follow toggle, a settings button, and a profile
+ * avatar.
  */
 import { useStore } from '../store.js'
 import { AutoToggle } from './AutoToggle.js'
@@ -16,10 +17,16 @@ export function TopBar() {
 
   return (
     <header className="tb">
-      <div className="wm">
-        <span className="wm__dot" aria-hidden />
-        ToneDeck
+      <div className="tb__nav">
+        <button type="button" className="tb__chevron" disabled aria-label="Back" title="Back">
+          ‹
+        </button>
+        <button type="button" className="tb__chevron" disabled aria-label="Forward" title="Forward">
+          ›
+        </button>
       </div>
+
+      <div className="tb__grow" />
 
       {deviceName && (
         <span className="pill pill--device" title="Active output device">
@@ -27,17 +34,14 @@ export function TopBar() {
         </span>
       )}
 
-      <div className="tb__grow" />
-
       <AutoToggle />
 
-      <button
-        type="button"
-        className="tb__icon"
-        title="Settings"
-        aria-label="Settings"
-      >
+      <button type="button" className="tb__icon" title="Settings" aria-label="Settings">
         ⚙
+      </button>
+
+      <button type="button" className="tb__avatar" title="ToneDeck" aria-label="Profile">
+        T
       </button>
     </header>
   )

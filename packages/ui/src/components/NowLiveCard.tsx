@@ -10,7 +10,6 @@ import { useStore } from '../store.js'
 import type { Meters as MeterFrame, Preset, Status } from '../types.js'
 import { AlbumArt } from './FallbackArt.js'
 import { EqCurveCanvas } from './EqCurveCanvas.js'
-import { Meters } from './Meters.js'
 import { BandChips } from './BandChips.js'
 import { Visualizer } from './Visualizer.js'
 
@@ -23,7 +22,7 @@ export function NowLiveCard({
   auto: { mode: string; generating?: boolean }
   meters: MeterFrame | null
 }) {
-  const { state, actions } = useStore()
+  const { actions } = useStore()
   const [preset, setPreset] = useState<Preset | null>(null)
   // Track the last requested slug so stale fetches don't overwrite newer state.
   const pendingSlug = useRef<string | null>(null)
@@ -49,7 +48,10 @@ export function NowLiveCard({
   if (!status.engaged || !status.activePreset) {
     return (
       <div className="empty-state">
-        Nothing live — play something in Apple Music
+        <div className="empty-state__title">Good evening</div>
+        <div className="empty-state__sub">
+          Nothing live right now — pick an album below and hit play to tune your sound.
+        </div>
       </div>
     )
   }
@@ -64,31 +66,30 @@ export function NowLiveCard({
 
   return (
     <div className="hero">
-      {/* Album cover */}
-      <div className="cover">
-        <AlbumArt
-          slug={slug}
-          title={title}
-          src={api.artworkUrl(slug)}
-          fontSize={36}
-        />
-        {isAuto && <span className="au-badge">◈ AUTO · SONNET</span>}
-        {auto.generating && <div className="tuning-overlay">tuning…</div>}
+      {/* Banner: cover + title block, bottom-aligned like a Spotify album header */}
+      <div className="hero__banner">
+        <div className="cover">
+          <AlbumArt slug={slug} title={title} src={api.artworkUrl(slug)} fontSize={40} />
+          {isAuto && <span className="au-badge">◈ AUTO</span>}
+          {auto.generating && <div className="tuning-overlay">tuning…</div>}
+        </div>
+        <div className="hero__head">
+          <span className="now-live-label">Now Live · Apple Music</span>
+          <h1 className="hero-title">{title}</h1>
+          {subtitle && <div className="hero-subtitle">{subtitle}</div>}
+        </div>
       </div>
 
-      {/* Middle: meta + curve + chips */}
-      <div className="heromid">
-        <span className="now-live-label">Now Live · Apple Music</span>
-        <div className="hero-title">{title}</div>
-        {subtitle && <div className="hero-subtitle">{subtitle}</div>}
+      {/* Detail: live visualizer, EQ curve, band chips, edit button */}
+      <div className="hero__detail">
+        <div className="hero-visualizer">
+          <Visualizer meters={meters} engaged={status.engaged} />
+        </div>
         {preset && (
           <div className="hero-curve">
             <EqCurveCanvas preset={preset} />
           </div>
         )}
-        <div className="hero-visualizer">
-          <Visualizer meters={meters} engaged={status.engaged} />
-        </div>
         {preset && preset.bands.length > 0 && (
           <BandChips bands={preset.bands} preamp={preset.preamp} />
         )}
@@ -100,17 +101,6 @@ export function NowLiveCard({
         >
           ✎ Edit EQ
         </button>
-      </div>
-
-      {/* Right: meters */}
-      <div className="hero-meters">
-        <Meters
-          meters={meters}
-          clipped={status.clippedSamples}
-          clipAck={state.clipAck}
-          onAckClip={actions.ackClip}
-          engaged={status.engaged}
-        />
       </div>
     </div>
   )
