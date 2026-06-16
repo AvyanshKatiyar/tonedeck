@@ -9,7 +9,7 @@ A Preset is ToneDeck's central data structure. It holds a complete parametric EQ
 
 ## Schema fields
 
-The canonical Zod schema lives in [[`packages/shared/src/preset.ts`]].
+The canonical Zod schema lives in [[packages/shared/src/preset.ts]].
 
 **Identity**
 - `slug` — kebab-case string, regex `[a-z0-9][a-z0-9-]*`, immutable after creation
@@ -58,3 +58,7 @@ Before any write, [[preset-store]] runs `_runSafety()`: [[safety]] `clampPreset(
 ## Builtin presets
 
 Seventeen presets are shipped in `presets/builtin/` and seeded to `~/.tonedeck/presets/` on first run. They are documented in [[builtin-presets]].
+
+## Corpus track presets
+
+The [[corpus]] build pipeline generates presets with `kind: 'track'` and `provenance.createdBy: 'claude'` for individual songs in the user's [[catalog]]. These differ from builtins: slugs are derived from `slugify(artist, title)`, `kind` is `'track'` (not `'album'`), and they are created on demand rather than seeded. The clustering engine ([[cluster]]) operates over these presets to discover groups of tracks with similar tuning requirements.

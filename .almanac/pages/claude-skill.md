@@ -1,11 +1,26 @@
 ---
 topics: [stack, flows, concepts]
-files: [skill/tonedeck-eq/SKILL.md, skill/tonedeck-eq/references/]
+sources:
+  - id: skill-md
+    type: file
+    path: skill/tonedeck-eq/SKILL.md
+    note: Defines the 8-step workflow, band guide, and symptom map.
+  - id: skill-refs
+    type: file
+    path: skill/tonedeck-eq/references/
+    note: Worked examples referenced by the skill.
 ---
 
 # Claude Skill
 
 The ToneDeck Claude Code skill at `skill/tonedeck-eq/SKILL.md` teaches Claude how to tune a [[preset]] using plain-language descriptions of what the listener wants. It is registered as a Claude Code tool during installation by [[install]] and is the intended interface for natural-language EQ requests.
+
+## Distinction from EqGen
+
+The Claude skill and [[eqgen]] are two separate Claude integration paths in ToneDeck:
+
+- **This skill** is *interactive*. It runs inside a Claude Code session, interprets the user's natural-language request, then executes `tonedeck tweak` and `tonedeck get` CLI commands step by step. It adjusts an existing preset incrementally (≤1.5 dB per step per band).
+- **EqGen** is *automated and batch*. It builds a structured prompt and spawns `claude -p` directly, expecting a raw JSON EQ configuration for a new track preset. No CLI commands, no iterative workflow, no user in the loop. Used by the [[corpus]] build pipeline.
 
 ## Contract
 
