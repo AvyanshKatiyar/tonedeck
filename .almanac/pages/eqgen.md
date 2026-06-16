@@ -27,6 +27,10 @@ sources:
     type: session
     session_id: 4c9fa884-2cf0-4e63-a174-2de2bcf966d5
     note: Session on 2026-06-17 that received the conservative prompt from dist/eqgen.js 20 minutes after src/eqgen.ts was updated to decisive — confirms the build drift risk.
+  - id: session-skill-activation
+    type: session
+    session_id: 54e64805-6896-4d25-8cb5-b23a81ce4ef8
+    note: Session on 2026-06-16 (branch feat/eq-clustering-corpus) where the tonedeck-eq skill activated during a batch eqgen call and Claude read band-guide.md before returning JSON — confirms skill activation in automated mode.
 status: active
 verified: 2026-06-17
 ---
@@ -63,6 +67,14 @@ spawn('claude', ['-p', '--model', 'sonnet', prompt], {
 **Timeout**: 90 s default; SIGKILL on expiry. Configure via `opts.timeoutMs`.
 
 **`MAX_THINKING_TOKENS=0`**: disables extended thinking, which would bloat the response and slow batch runs.
+
+## Skill Activation in Batch Mode
+
+The `tonedeck-eq` Claude Code skill fires even in automated `claude -p` calls. The SessionStart hook that loads the skill listing runs unconditionally, regardless of whether the session is interactive or batch. When the model sees the EQ-tuning prompt it matches the `tonedeck-eq` trigger and invokes the skill — then reads `references/band-guide.md` as musical domain knowledge before producing the response. [@session-skill-activation]
+
+The explicit **"Respond with ONLY a JSON object, no prose"** instruction in the eqgen prompt overrides the skill's 8-step CLI workflow. No `tonedeck status --json`, `tonedeck list --json`, or other commands are executed. The band guide is used for design reasoning only.
+
+**Coupling implication:** `skill/tonedeck-eq/references/band-guide.md` is shared domain knowledge for both interactive sessions and batch corpus generation. A change to the band guide — e.g., adjusting the safe ranges for a band, changing the harshness-first philosophy, or editing the FT1 Pro house notes — propagates to both paths. This is the opposite of what you'd expect from a tool described as "interactive only." Future agents editing the band guide should treat it as affecting corpus EQ quality, not just user-facing tuning sessions.
 
 ## JSON Extraction
 
