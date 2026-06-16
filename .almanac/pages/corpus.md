@@ -11,6 +11,10 @@ sources:
     type: file
     path: scripts/corpus-build.ts
     note: Wires real deps (daemon API + eqgen) and adds env-var controls.
+  - id: session-runaway-list
+    type: session
+    session_id: 8e42808e-1db3-4fba-a8b8-101f916e2114
+    note: Session on 2026-06-16 (branch feat/eq-clustering-corpus, sdk-cli) for "Runaway (feat. Pusha T)" — tonedeck list --json output at this point confirms track-monster-kanye and kanye-west-monster-feat-jay-z-rick-ross-nicki-minaj-bon-iver both exist as a duplicate pair.
 status: active
 verified: 2026-06-17
 ---
@@ -108,6 +112,7 @@ As of 2026-06-16, `~/.tonedeck/presets/` contains 29 presets with the `track-*` 
 | `track-all-of-the-lights` | `kanye-west-all-of-the-lights` |
 | `track-after-dark-mrkitty` | `mr-kitty-after-dark` |
 | `track-everything-we-need` | `kanye-west-everything-we-need-feat-ty-dolla-ign-ant-clemons` |
+| `track-monster-kanye` | `kanye-west-monster-feat-jay-z-rick-ross-nicki-minaj-bon-iver` [@session-runaway-list] |
 
 **Downstream consequence for clustering**: `GET /api/clusters` calls `store.allPresets()`, which returns both slugs. The same song's two presets may land in different clusters if the curves diverge (each was generated in a separate EqGen call). Cluster membership counts are inflated; cross-cluster gap analysis is noisy.
 
