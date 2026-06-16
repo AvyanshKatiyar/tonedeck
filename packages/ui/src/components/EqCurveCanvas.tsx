@@ -13,10 +13,10 @@ const FREQ: [number, number] = [20, 20000]
 const DB: [number, number] = [-9, 9]
 const PAD = { left: 28, right: 10, top: 10, bottom: 18 }
 
-const ACCENT = '#d4a259'
-const GRID = 'rgba(236,236,236,0.08)'
-const ZERO = 'rgba(236,236,236,0.28)'
-const LABEL = 'rgba(236,236,236,0.4)'
+const ACCENT = '#ff8a4c'
+const GRID = 'rgba(255,255,255,0.08)'
+const ZERO = 'rgba(255,255,255,0.28)'
+const LABEL = 'rgba(255,255,255,0.4)'
 
 export function EqCurveCanvas({ preset }: { preset: Pick<Preset, 'bands' | 'preamp'> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -94,7 +94,7 @@ export function EqCurveCanvas({ preset }: { preset: Pick<Preset, 'bands' | 'prea
       ctx.lineTo(ox + curve[curve.length - 1][0], zeroY)
       ctx.lineTo(ox + curve[0][0], zeroY)
       ctx.closePath()
-      ctx.fillStyle = 'rgba(212,162,89,0.12)'
+      ctx.fillStyle = 'rgba(255,138,76,0.16)'
       ctx.fill()
 
       // Curve stroke.
@@ -112,7 +112,7 @@ export function EqCurveCanvas({ preset }: { preset: Pick<Preset, 'bands' | 'prea
         ctx.arc(ox + x, oy + y, 3, 0, Math.PI * 2)
         ctx.fillStyle = ACCENT
         ctx.fill()
-        ctx.strokeStyle = '#0b0b0d'
+        ctx.strokeStyle = '#121212'
         ctx.lineWidth = 1.5
         ctx.stroke()
       }

@@ -148,12 +148,12 @@ export function Visualizer({
       const barW = (w - totalGap) / N_BARS
       const radius = Math.min(barW / 2, 3)
 
-      // Amber→terracotta gradient (vertical, top of tallest bar to bottom).
-      // We use accent (#d4a259) and accent-warm (#e07a5f) from the CSS tokens.
+      // Warm ember gradient (vertical, top of tallest bar to bottom):
+      // brighter amber at the peak fading to a dim ember base.
       const grad = ctx!.createLinearGradient(0, 0, 0, h)
-      grad.addColorStop(0, '#e07a5f')   // --accent-warm (top / peak)
-      grad.addColorStop(0.45, '#d4a259') // --accent (mid)
-      grad.addColorStop(1, 'rgba(212,162,89,0.35)') // dim at base
+      grad.addColorStop(0, '#ffb07a')   // bright amber (top / peak)
+      grad.addColorStop(0.45, '#ff8a4c') // accent ember (mid)
+      grad.addColorStop(1, 'rgba(255,138,76,0.32)') // dim at base
 
       ctx!.fillStyle = grad
 
