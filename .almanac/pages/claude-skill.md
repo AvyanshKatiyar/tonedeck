@@ -27,6 +27,10 @@ sources:
     type: session
     session_id: 72e6156f-2a2e-4555-a960-896a8f8c72b9
     note: Session on 2026-06-16 creating track-everything-we-need (JESUS IS KING); fourth instance of the schema gotcha — used "label" instead of "title" on attempt 1, then missing provenance/version/timestamps on attempt 2, then recovered with NOW=$(date -u ...) on attempt 3. Agent used tonedeck show foster-the-people-pumped-up-kicks --json as schema reference after tonedeck create --help gave no field details.
+  - id: session-god-is
+    type: session
+    session_id: 8b4d4490-988b-4b41-ae0d-873b3bb26c67
+    note: Session on 2026-06-16 creating track-god-is (JESUS IS KING); fifth instance of the schema gotcha — used bands as a keyed object {"Bass":{...}} on attempt 1 (error "bands expected array, received object"), then fixed bands to array but omitted provenance/version/timestamps on attempt 2, then recovered by inspecting tonedeck show track-use-this-gospel --json. Confirms the discovery-tip pattern.
 status: active
 verified: 2026-06-17
 ---
@@ -77,6 +81,8 @@ The skill defines an 8-step workflow [@skill-md]:
    ```
 
    > **Schema gotcha — all fields are required.** The `create --from-json` command validates against the full Zod preset schema. The daemon does **not** auto-populate missing fields from stdin. Omitting any of `title`, `profile`, `provenance`, `version`, `createdAt`, or `updatedAt` causes exit code 2 with a validation error listing the missing keys. Use ISO 8601 strings for `createdAt`/`updatedAt` (they can be identical). `version` starts at `1`.
+   >
+   > **`bands` must be an array, not an object.** A keyed-object form like `{"Bass": {"type": "lowshelf", ...}}` fails with `bands: Expected array, received object`. The correct form is an array where every entry has an `id` field: `[{"id": "Bass", "type": "lowshelf", ...}]`. The [[eqgen]] prompt response uses an array-without-id (matching the external prompt spec); when composing the full create-JSON from an eqgen-style output, add the `"id"` field to each band entry. [@session-god-is]
    >
    > **Timestamp shell technique.** In real sessions, missing `createdAt`/`updatedAt` is the most common source of multi-attempt failures (attempt 1 omits `profile`/`provenance`, attempt 2 omits the timestamps). The reliable fix is to capture the current UTC time with shell substitution before the heredoc: `NOW=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")`, then use `"$NOW"` for both fields. Heredoc variable substitution requires using `<<JSON` (unquoted delimiter); `<<'JSON'` suppresses expansion. [@session-monster-kanye]
    >
