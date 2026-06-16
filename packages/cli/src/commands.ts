@@ -6,7 +6,7 @@
  * The `fetchFn` in ApiCtx is injectable so tests never need a live daemon.
  */
 
-import { applyVibes, VIBES, type VibeName, type Preset, type Profile } from '@tonedeck/shared'
+import { applyVibes, VIBES, type VibeName, type Preset, type Profile, type ClusterResult } from '@tonedeck/shared'
 import { CliError, type ApiCtx, apiGet, apiPost, apiPut, apiDelete, apiProbe } from './api.js'
 import {
   fmtStatus,
@@ -16,6 +16,7 @@ import {
   fmtMeterSummary,
   fmtMeterLine,
   fmtDoctor,
+  fmtClusters,
   type StatusData,
   type PresetSummaryRow,
   type MeterFrame,
@@ -74,6 +75,17 @@ export async function actionStatus(ctx: ApiCtx, opts: { json: boolean }): Promis
 export async function actionList(ctx: ApiCtx, opts: { json: boolean }): Promise<void> {
   const data = await apiGet<{ presets: PresetSummaryRow[] }>(ctx, '/api/presets')
   out(opts.json, data, fmtPresetList(data.presets))
+}
+
+// ─── clusters ───────────────────────────────────────────────────────────────
+
+export async function actionClusters(
+  ctx: ApiCtx,
+  opts: { json: boolean; threshold?: number },
+): Promise<void> {
+  const qs = opts.threshold != null ? `?threshold=${opts.threshold}` : ''
+  const data = await apiGet<ClusterResult>(ctx, `/api/clusters${qs}`)
+  out(opts.json, data, fmtClusters(data))
 }
 
 // ─── show ─────────────────────────────────────────────────────────────────────
