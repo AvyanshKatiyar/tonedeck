@@ -11,6 +11,10 @@ sources:
     type: file
     path: skill/tonedeck-eq/references/
     note: band-guide.md, symptom-map.md, and worked-examples.md referenced by the skill.
+  - id: session-closed-on-sunday
+    type: session
+    session_id: 3f9795f1-ad87-427f-9ab5-143182ed5c9f
+    note: Session creating track-closed-on-sunday; shows the album-preset reference pattern and confirms the schema gotcha (missing provenance/version/createdAt/updatedAt → exit code 2).
 status: active
 verified: 2026-06-17
 ---
@@ -31,7 +35,7 @@ The Claude skill and [[eqgen]] are two separate Claude integration paths in Tone
 The skill defines an 8-step workflow [@skill-md]:
 
 1. **Know the state first.** Run `tonedeck status --json` (or `tonedeck doctor` if audio seems broken) and read `engaged`, `activePreset`, and `bypass` before acting.
-2. **Find the existing preset.** `tonedeck list --json`, then `tonedeck show <slug> --json`. Never create a duplicate.
+2. **Find the existing preset.** `tonedeck list --json`, then `tonedeck show <slug> --json`. Never create a duplicate. **When creating a track preset where an album preset already exists for the same artist**, additionally run `tonedeck show <album-slug> --json` to read the album curve before designing the track preset. The album preset is a design reference, not a template to copy — use it to make informed, intentional choices about what to change (e.g., different preamp headroom, tighter harshness cuts, less air on a sparse mix) rather than starting from scratch with no anchor.
 3. **For a new album/artist/genre/track** (no existing preset): design from music knowledge (era, mastering style, genre traits), compose the preset JSON, and create it via stdin:
    ```bash
    tonedeck create --from-json - <<'JSON'
