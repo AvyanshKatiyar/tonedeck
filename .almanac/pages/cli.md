@@ -11,6 +11,14 @@ sources:
     type: file
     path: packages/cli/src/commands.ts
     note: actionTweak, actionCreate, actionAuto, actionShow, and all other action implementations.
+  - id: cli-format
+    type: file
+    path: packages/cli/src/format.ts
+    note: PresetSummaryRow interface and fmtPresetList — confirms the fields and shape of list --json output.
+  - id: session-everything-we-need
+    type: session
+    session_id: 72e6156f-2a2e-4555-a960-896a8f8c72b9
+    note: Session on 2026-06-16 creating track-everything-we-need; agent iterated over tonedeck list --json output incorrectly (over the wrapper object instead of .presets), illustrating the scripting pitfall.
 status: active
 verified: 2026-06-17
 ---
@@ -34,7 +42,7 @@ All commands receive an `ApiCtx` object that holds `fetchFn` and `wsFn`. In prod
 - `tonedeck panic` — emergency DSP teardown; always exits 0
 
 **Preset CRUD:**
-- `tonedeck list` — list all presets with slug, label, version, and kind
+- `tonedeck list` — list all presets with slug, title, artist, kind, and version. With `--json`, returns `{ "presets": [{ slug, title, artist?, kind, version }] }`. **Scripting pitfall:** the JSON output is a wrapper object, not a flat array; `for p in json.load(stdin)` iterates over dict keys (`"presets"`), not preset items. Always index into `.presets` first: `data['presets']`.
 - `tonedeck show <slug>` — print the full preset as JSON including band configuration and provenance history
 - `tonedeck create --from-json <file>` — create a new preset from a JSON file; use `--from-json -` to read from stdin (heredoc). Flags: `--apply` (apply after creating), `--no-clamp` (skip gain clamping), `--no-auto-trim` (skip silent-band trimming). Refuses if the slug already exists (exit 3, "already exists").
 - `tonedeck delete <slug>` — delete a preset

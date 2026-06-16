@@ -23,6 +23,10 @@ sources:
     type: session
     session_id: 5169c26e-22dc-4956-82db-41f4a487f133
     note: Session on 2026-06-16 creating track-monster-kanye; demonstrates the multi-step schema failure recovery (missing profile/provenance on attempt 1, missing version/createdAt/updatedAt on attempt 2) and the shell timestamp technique that resolves it.
+  - id: session-everything-we-need
+    type: session
+    session_id: 72e6156f-2a2e-4555-a960-896a8f8c72b9
+    note: Session on 2026-06-16 creating track-everything-we-need (JESUS IS KING); fourth instance of the schema gotcha — used "label" instead of "title" on attempt 1, then missing provenance/version/timestamps on attempt 2, then recovered with NOW=$(date -u ...) on attempt 3. Agent used tonedeck show foster-the-people-pumped-up-kicks --json as schema reference after tonedeck create --help gave no field details.
 status: active
 verified: 2026-06-17
 ---
