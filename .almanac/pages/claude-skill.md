@@ -31,6 +31,10 @@ sources:
     type: session
     session_id: 8b4d4490-988b-4b41-ae0d-873b3bb26c67
     note: Session on 2026-06-16 creating track-god-is (JESUS IS KING); fifth instance of the schema gotcha — used bands as a keyed object {"Bass":{...}} on attempt 1 (error "bands expected array, received object"), then fixed bands to array but omitted provenance/version/timestamps on attempt 2, then recovered by inspecting tonedeck show track-use-this-gospel --json. Confirms the discovery-tip pattern.
+  - id: session-jesus-is-lord
+    type: session
+    session_id: b4fb0ff7-f64c-4dc7-a5cd-6625f41daff3
+    note: Session on 2026-06-17 attempting track-jesus-is-lord (JESUS IS KING closing track); sixth instance of the schema gotcha — used "label" instead of "title" and omitted profile/provenance/version/createdAt/updatedAt. Session ended with exit code 137 (SIGKILL / 128+9) rather than the exit code 2 observed in session-closed-on-sunday, suggesting the Bash heredoc process was killed externally rather than the CLI returning a clean validation error exit. Preset was never created.
 status: active
 verified: 2026-06-17
 ---
@@ -80,7 +84,7 @@ The skill defines an 8-step workflow [@skill-md]:
    JSON
    ```
 
-   > **Schema gotcha — all fields are required.** The `create --from-json` command validates against the full Zod preset schema. The daemon does **not** auto-populate missing fields from stdin. Omitting any of `title`, `profile`, `provenance`, `version`, `createdAt`, or `updatedAt` causes exit code 2 with a validation error listing the missing keys. Use ISO 8601 strings for `createdAt`/`updatedAt` (they can be identical). `version` starts at `1`.
+   > **Schema gotcha — all fields are required.** The `create --from-json` command validates against the full Zod preset schema. The daemon does **not** auto-populate missing fields from stdin. Omitting any of `title`, `profile`, `provenance`, `version`, `createdAt`, or `updatedAt` causes a validation error listing the missing keys. Exit code on failure has varied across sessions: exit code 2 in `session-closed-on-sunday`; exit code 137 (SIGKILL / 128+9) in `session-jesus-is-lord` on 2026-06-17, suggesting the heredoc Bash process was killed externally rather than the CLI returning a clean exit. In both cases the error message `error: Invalid preset: <field>: Required` is printed. Use ISO 8601 strings for `createdAt`/`updatedAt` (they can be identical). `version` starts at `1`.
    >
    > **`bands` must be an array, not an object.** A keyed-object form like `{"Bass": {"type": "lowshelf", ...}}` fails with `bands: Expected array, received object`. The correct form is an array where every entry has an `id` field: `[{"id": "Bass", "type": "lowshelf", ...}]`. The [[eqgen]] prompt response uses an array-without-id (matching the external prompt spec); when composing the full create-JSON from an eqgen-style output, add the `"id"` field to each band entry. [@session-god-is]
    >
