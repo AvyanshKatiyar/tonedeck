@@ -1,7 +1,7 @@
 /** Authors an EQ preset for one track by shelling out to the local Claude CLI
  *  (`claude -p`). No API key. Schema-validates the model output; the PresetStore
  *  applies the authoritative house-limit clamp on create. */
-import { execFile } from 'node:child_process'
+import { spawn } from 'node:child_process'
 import { parsePreset, type Preset, type Profile } from '@tonedeck/shared'
 
 export class EqGenError extends Error {
@@ -29,11 +29,37 @@ const defaultExec: GenExec = (prompt, timeoutMs) =>
       .filter(Boolean)
       .join(':')
     const bin = process.env.TONEDECK_CLAUDE_BIN || 'claude'
-    execFile(
-      bin,
-      ['-p', '--model', 'sonnet', prompt],
-      { timeout: timeoutMs, env: { ...process.env, MAX_THINKING_TOKENS: '0', PATH }, maxBuffer: 1 << 20 },
-      (err, stdout) => (err ? reject(err) : resolve(stdout.toString())),
+    // stdin MUST be ignored. `claude -p` otherwise blocks reading stdin (it warns
+    // "no stdin data received in 3s"); under concurrent batch use that contention
+    // produces empty/prose output → "no JSON object". 'ignore' closes stdin so
+    // claude proceeds immediately. (Harmless under launchd, which already has no
+    // stdin — this only fixes shell/batch contexts like corpus-build.)
+    const child = spawn(bin, ['-p', '--model', 'sonnet', prompt], {
+      env: { ...process.env, MAX_THINKING_TOKENS: '0', PATH },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    })
+    let out = ''
+    let errOut = ''
+    let settled = false
+    const finish = (fn: () => void): void => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      fn()
+    }
+    const timer = setTimeout(() => {
+      child.kill('SIGKILL')
+      finish(() => reject(new Error(`claude timed out after ${timeoutMs}ms`)))
+    }, timeoutMs)
+    child.stdout.on('data', (d) => (out += d.toString()))
+    child.stderr.on('data', (d) => (errOut += d.toString()))
+    child.on('error', (e) => finish(() => reject(e)))
+    child.on('close', (code) =>
+      finish(() =>
+        code === 0
+          ? resolve(out)
+          : reject(new Error(`claude exited ${code}: ${errOut.slice(0, 200)}`)),
+      ),
     )
   })
 
