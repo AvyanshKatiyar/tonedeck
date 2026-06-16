@@ -34,7 +34,11 @@ sources:
   - id: session-sdk-eqgen-prompt
     type: session
     session_id: 62fb0069-fa8d-45a0-8cdb-d8b4846d8161
-    note: Session on 2026-06-16 (branch feat/eq-clustering-corpus) where the eqgen-style prompt was delivered via SDK (sdk-cli entrypoint) instead of claude -p. The agent ran the full 8-step skill workflow — tonedeck status, tonedeck list, tonedeck show — confirming that the JSON-only instruction does NOT suppress CLI tool use when Bash is available via SDK.
+    note: Session on 2026-06-16 (branch feat/eq-clustering-corpus) where the eqgen-style prompt was delivered via SDK (sdk-cli entrypoint) instead of claude -p. The agent ran the full 8-step skill workflow — tonedeck status, tonedeck list, tonedeck show — confirming that the JSON-only instruction does NOT reliably suppress CLI tool use when Bash is available via SDK.
+  - id: session-sdk-direct-json
+    type: session
+    session_id: 7424d6cc-d23d-424f-8f84-a9fc55e6ff2f
+    note: Session on 2026-06-16 (branch feat/eq-clustering-corpus, sdk-cli entrypoint) for "Devil In a New Dress" on the FT1 Pro chain using the conservative prompt. Agent returned JSON directly in ~5.5 s with no tool calls, despite the tonedeck-eq skill being listed in the session context. Counterexample to the claim that SDK sessions always run the full skill workflow.
 status: active
 verified: 2026-06-17
 ---
@@ -78,7 +82,9 @@ The `tonedeck-eq` Claude Code skill fires even in automated `claude -p` calls. T
 
 In `claude -p` calls, the explicit **"Respond with ONLY a JSON object, no prose"** instruction suppresses the skill's 8-step CLI workflow. No `tonedeck status --json`, `tonedeck list --json`, or other commands are executed. The band guide is used for design reasoning only. The reason this works is mechanical: `claude -p` does not expose the Bash tool, so even if the skill activates and the agent wants to run CLI commands, it has no means to do so.
 
-**SDK sessions behave differently.** When the same eqgen-style prompt is delivered via an SDK (`sdk-cli`) entrypoint rather than `claude -p`, the agent has full tool access. In that mode the skill activates and the agent executes the complete 8-step workflow — `tonedeck status --json`, `tonedeck list --json`, `tonedeck show`, etc. — before producing any output. The JSON-only instruction alone is not sufficient to suppress CLI tool use when the Bash tool is available. [@session-sdk-eqgen-prompt] The corpus build pipeline correctly uses `claude -p`; any refactoring that shifts generation to the SDK would need an explicit `--allowedTools []` constraint or equivalent to preserve the batch semantics.
+**SDK sessions behave differently and non-deterministically.** When the same eqgen-style prompt is delivered via an SDK (`sdk-cli`) entrypoint rather than `claude -p`, the agent has full tool access. In some cases the skill activates and the agent executes the full 8-step workflow — `tonedeck status --json`, `tonedeck list --json`, `tonedeck show`, etc. — before producing output, as observed in session `62fb0069`. [@session-sdk-eqgen-prompt] In other cases the agent returns JSON directly without invoking any tools, as observed in session `7424d6cc` (same branch, conservative prompt, ~5.5 s response time). [@session-sdk-direct-json]
+
+The two sessions differ primarily in prompt content: `62fb0069` used a later, wordier decisive prompt; `7424d6cc` used the terse conservative prompt. Cache state and model non-determinism may also be factors. The JSON-only instruction alone is therefore not a reliable suppressor — it may work sometimes but cannot be depended on. The corpus build pipeline correctly uses `claude -p`; any refactoring that shifts generation to the SDK would need an explicit `--allowedTools []` constraint or equivalent to guarantee batch semantics across all runs.
 
 **Coupling implication:** `skill/tonedeck-eq/references/band-guide.md` is shared domain knowledge for both interactive sessions and batch corpus generation. A change to the band guide — e.g., adjusting the safe ranges for a band, changing the harshness-first philosophy, or editing the FT1 Pro house notes — propagates to both paths. This is the opposite of what you'd expect from a tool described as "interactive only." Future agents editing the band guide should treat it as affecting corpus EQ quality, not just user-facing tuning sessions.
 
