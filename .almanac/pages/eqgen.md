@@ -84,7 +84,7 @@ All failures throw `EqGenError` (a typed subclass of Error). Callers can check `
 
 The generation prompt includes three main sections:
 
-1. **Chain context**: `"You are tuning a parametric EQ for the headphone chain '${profile.name}' (${profile.houseNotes})."` — `houseNotes` comes from `profiles/ft1pro.json` and describes preamp defaults, driver characteristics, and primary harshness levers for that headphone.
+1. **Chain context**: `"You are tuning a parametric EQ for the headphone chain '${profile.name}' (${profile.houseNotes})."` — `houseNotes` is a free-text field in `profiles/ft1pro.json` injected verbatim. See [[profile]] for the exact content and its implications for generation behavior.
 
 2. **Song identity**: title, artist, album.
 
