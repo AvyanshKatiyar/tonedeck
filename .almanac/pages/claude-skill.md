@@ -27,14 +27,18 @@ sources:
     type: session
     session_id: 72e6156f-2a2e-4555-a960-896a8f8c72b9
     note: Session on 2026-06-16 creating track-everything-we-need (JESUS IS KING); fourth instance of the schema gotcha — used "label" instead of "title" on attempt 1, then missing provenance/version/timestamps on attempt 2, then recovered with NOW=$(date -u ...) on attempt 3. Agent used tonedeck show foster-the-people-pumped-up-kicks --json as schema reference after tonedeck create --help gave no field details.
+  - id: session-use-this-gospel
+    type: session
+    session_id: d9986553-3d05-433c-8d24-30d7e3bbbc45
+    note: Session on 2026-06-16T17:05Z (conservative prompt, sdk-cli, branch feat/eq-clustering-corpus) creating track-use-this-gospel ("Use This Gospel" by Kanye West, JESUS IS KING); fifth instance of the schema gotcha — attempt 1 omitted band ids + provenance + version + timestamps, attempt 2 fixed band ids (after inspecting tonedeck show track-all-of-the-lights --json) but still omitted provenance/version/timestamps, attempt 3 succeeded after consulting the same reference again. Chronologically precedes session-god-is, which uses track-use-this-gospel as its own reference. Conservative prompt triggered the full 8-step skill workflow in SDK mode (another data point for non-deterministic SDK behavior).
   - id: session-god-is
     type: session
     session_id: 8b4d4490-988b-4b41-ae0d-873b3bb26c67
-    note: Session on 2026-06-16 creating track-god-is (JESUS IS KING); fifth instance of the schema gotcha — used bands as a keyed object {"Bass":{...}} on attempt 1 (error "bands expected array, received object"), then fixed bands to array but omitted provenance/version/timestamps on attempt 2, then recovered by inspecting tonedeck show track-use-this-gospel --json. Confirms the discovery-tip pattern.
+    note: Session on 2026-06-16 creating track-god-is (JESUS IS KING); sixth instance of the schema gotcha — used bands as a keyed object {"Bass":{...}} on attempt 1 (error "bands expected array, received object"), then fixed bands to array but omitted provenance/version/timestamps on attempt 2, then recovered by inspecting tonedeck show track-use-this-gospel --json. Confirms the discovery-tip pattern.
   - id: session-jesus-is-lord
     type: session
     session_id: b4fb0ff7-f64c-4dc7-a5cd-6625f41daff3
-    note: Session on 2026-06-17 attempting track-jesus-is-lord (JESUS IS KING closing track); sixth instance of the schema gotcha — used "label" instead of "title" and omitted profile/provenance/version/createdAt/updatedAt. Session ended with exit code 137 (SIGKILL / 128+9) rather than the exit code 2 observed in session-closed-on-sunday, suggesting the Bash heredoc process was killed externally rather than the CLI returning a clean validation error exit. Preset was never created.
+    note: Session on 2026-06-17 attempting track-jesus-is-lord (JESUS IS KING closing track); seventh instance of the schema gotcha — used "label" instead of "title" and omitted profile/provenance/version/createdAt/updatedAt. Session ended with exit code 137 (SIGKILL / 128+9) rather than the exit code 2 observed in session-closed-on-sunday, suggesting the Bash heredoc process was killed externally rather than the CLI returning a clean validation error exit. Preset was never created.
 status: active
 verified: 2026-06-17
 ---
