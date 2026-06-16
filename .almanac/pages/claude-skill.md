@@ -35,9 +35,37 @@ The skill defines an 8-step workflow [@skill-md]:
 3. **For a new album/artist/genre/track** (no existing preset): design from music knowledge (era, mastering style, genre traits), compose the preset JSON, and create it via stdin:
    ```bash
    tonedeck create --from-json - <<'JSON'
-   { "schemaVersion":1, "slug":"...", "kind":"album", ... }
+   {
+     "schemaVersion": 1,
+     "slug": "track-my-song-artist",
+     "kind": "track",
+     "title": "My Song",
+     "artist": "Artist Name",
+     "profile": "ft1pro",
+     "intent": "brief description of the tuning goal",
+     "preamp": -1,
+     "version": 1,
+     "createdAt": "2026-06-17T00:00:00.000Z",
+     "updatedAt": "2026-06-17T00:00:00.000Z",
+     "bands": [
+       { "id": "Bass",         "type": "lowshelf",  "freq": 60,    "q": 0.7, "gain": 0.0 },
+       { "id": "KickBody",     "type": "peaking",   "freq": 120,   "q": 0.9, "gain": 0.0 },
+       { "id": "LowMidClean",  "type": "peaking",   "freq": 250,   "q": 1.0, "gain": 0.0 },
+       { "id": "UpperMidTame", "type": "peaking",   "freq": 3200,  "q": 1.2, "gain": 0.0 },
+       { "id": "PresenceTame", "type": "peaking",   "freq": 5000,  "q": 2.0, "gain": 0.0 },
+       { "id": "Air",          "type": "highshelf", "freq": 10000, "q": 0.7, "gain": 0.0 }
+     ],
+     "provenance": { "createdBy": "user", "history": [] }
+   }
    JSON
    ```
+
+   > **Schema gotcha — all fields are required.** The `create --from-json` command validates against the full Zod preset schema. The daemon does **not** auto-populate missing fields from stdin. Omitting any of `profile`, `provenance`, `version`, `createdAt`, or `updatedAt` causes exit code 2 with a validation error listing the missing keys. Use ISO 8601 strings for `createdAt`/`updatedAt` (they can be identical). `version` starts at `1`.
+   >
+   > **Field names on the wire differ from `preset.md`.** The JSON key is `profile` (not `profileId`), and `createdAt`/`updatedAt` live at the top level (not inside `provenance`). `provenance` holds only `createdBy` (string) and `history` (empty array at creation).
+   >
+   > **Discovery tip.** When unsure about the exact required shape, fetch a real preset first: `tonedeck show <any-existing-slug> --json`. Copy that structure and replace the values. This is the fastest way to avoid schema validation failures.
+
    If `engaged:true`, add `--apply` to hear it immediately. `create --apply` applies but does not engage on its own; use `tonedeck on <slug>` to engage if needed.
 4. **Read the response and relay warnings.** The daemon may clamp gains and auto-trim the preamp. Every warning must be relayed to the user in plain words. Never fight or hide them.
 5. **Verify.** `tonedeck status --json` → confirm `activePreset` is the correct slug. Watch `clippedSamples`.
