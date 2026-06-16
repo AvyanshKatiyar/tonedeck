@@ -16,6 +16,8 @@ import { readCatalog } from './lib/catalog-io.js'
 const ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const BASE = process.env.TONEDECK_URL ?? `http://127.0.0.1:${process.env.TONEDECK_PORT ?? 5055}`
 const CONCURRENCY = Number(process.env.TONEDECK_CORPUS_CONCURRENCY ?? 3)
+// Optional cap for staged runs (e.g. TONEDECK_CORPUS_LIMIT=15 for a sample).
+const LIMIT = Number(process.env.TONEDECK_CORPUS_LIMIT ?? 0)
 
 const profile = parseProfile(JSON.parse(readFileSync(join(ROOT, 'profiles', 'ft1pro.json'), 'utf8')))
 
@@ -42,13 +44,19 @@ async function main(): Promise<void> {
     console.log('catalog is empty — run an ingest script first')
     return
   }
-  const items: CorpusItem[] = catalog.map((e) => ({
+  let items: CorpusItem[] = catalog.map((e) => ({
     title: e.title,
     artist: e.artist,
     album: e.album,
     slug: slugify(e.artist, e.title),
   }))
   const existing = await existingSlugs()
+  if (LIMIT > 0) {
+    // Cap to the first LIMIT songs that still need generating (staged sample run).
+    const pending = items.filter((it) => !existing.has(it.slug)).slice(0, LIMIT)
+    items = pending
+    console.log(`LIMIT=${LIMIT} → sampling ${pending.length} not-yet-generated songs`)
+  }
 
   console.log(`corpus: ${items.length} songs, ${existing.size} presets already exist, concurrency ${CONCURRENCY}`)
   const result = await runCorpusBuild({
