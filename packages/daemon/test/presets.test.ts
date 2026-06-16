@@ -364,4 +364,10 @@ describe('revertPreset', () => {
     expect(versions.map((v) => v.version)).toEqual([1, 2])
     expect(versions.at(-1)).toMatchObject({ current: true, change: 'Bass +1' })
   })
+
+  it('allPresets returns full Preset objects with bands', () => {
+    const all = store.allPresets()
+    expect(all.length).toBeGreaterThan(0) // seeded from builtins
+    expect(Array.isArray(all[0].bands)).toBe(true)
+  })
 })

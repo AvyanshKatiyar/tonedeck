@@ -20,6 +20,7 @@ import { AutoDJ } from './autodj.js'
 import { readNowPlaying } from './nowplaying.js'
 import { generateTrackEq } from './eqgen.js'
 import presetsPlugin from './routes/presets.js'
+import clustersPlugin from './routes/clusters.js'
 import artworkPlugin from './routes/artwork.js'
 import controlPlugin from './routes/control.js'
 import autoPlugin from './routes/auto.js'
@@ -85,6 +86,7 @@ export async function buildServer(opts: BuildServerOpts = {}) {
   })
 
   await server.register(presetsPlugin, { store })
+  await server.register(clustersPlugin, { store })
   await server.register(artworkPlugin, { store, artwork })
 
   // ── Static UI (packages/ui/dist) ────────────────────────────────────────────

@@ -155,6 +155,11 @@ export class PresetStore {
     return this.presets.get(slug)
   }
 
+  /** All full presets — for clustering and other bulk reads. */
+  allPresets(): Preset[] {
+    return Array.from(this.presets.values())
+  }
+
   getProfile(id: string): Profile | undefined {
     return this.profiles.get(id)
   }
