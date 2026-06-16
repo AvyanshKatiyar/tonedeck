@@ -19,6 +19,10 @@ sources:
     type: session
     session_id: 4c9fa884-2cf0-4e63-a174-2de2bcf966d5
     note: Second session attempting track-closed-on-sunday; demonstrates the label-vs-title schema gotcha variant — model wrote "label" instead of "title" and omitted profile/provenance/version/createdAt/updatedAt.
+  - id: session-monster-kanye
+    type: session
+    session_id: 5169c26e-22dc-4956-82db-41f4a487f133
+    note: Session on 2026-06-16 creating track-monster-kanye; demonstrates the multi-step schema failure recovery (missing profile/provenance on attempt 1, missing version/createdAt/updatedAt on attempt 2) and the shell timestamp technique that resolves it.
 status: active
 verified: 2026-06-17
 ---
@@ -69,6 +73,8 @@ The skill defines an 8-step workflow [@skill-md]:
    ```
 
    > **Schema gotcha — all fields are required.** The `create --from-json` command validates against the full Zod preset schema. The daemon does **not** auto-populate missing fields from stdin. Omitting any of `title`, `profile`, `provenance`, `version`, `createdAt`, or `updatedAt` causes exit code 2 with a validation error listing the missing keys. Use ISO 8601 strings for `createdAt`/`updatedAt` (they can be identical). `version` starts at `1`.
+   >
+   > **Timestamp shell technique.** In real sessions, missing `createdAt`/`updatedAt` is the most common source of multi-attempt failures (attempt 1 omits `profile`/`provenance`, attempt 2 omits the timestamps). The reliable fix is to capture the current UTC time with shell substitution before the heredoc: `NOW=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")`, then use `"$NOW"` for both fields. Heredoc variable substitution requires using `<<JSON` (unquoted delimiter); `<<'JSON'` suppresses expansion. [@session-monster-kanye]
    >
    > **`label` is not a valid field.** The correct key for the display name is `title` (a required `string` ≥ 1 char). A recurring mistake is writing `"label": "Song — Artist"` instead of `"title": "Song"` — this is a contamination from the [[eqgen]] response format, which requests `{ preamp, intent, notes, bands }` with no `title`. When the agent composes the full create-JSON from the eqgen-style prompt output, it must use `title`, not `label`. [@session-closed-on-sunday-2]
    >
