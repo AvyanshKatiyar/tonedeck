@@ -23,9 +23,13 @@ The canonical Zod schema is in [[packages/shared/src/preset.ts]] alongside the P
 
 - `id` — string identifier, e.g. `'ft1pro'`
 - `name` — human display name
+- `playbackDeviceName` — CoreAudio device name for headphone output (e.g., `'External Headphones'`); used by [[camillayaml-emitter]] to configure CamillaDSP's playback device
+- `captureDeviceName` — CoreAudio device name for capture input; defaults to `'BlackHole 2ch'` in the schema
 - `bandTemplate` — array of template [[band]] objects, each with `id`, `type`, `freq`, `q`, and `gain` set to `0`; these define the standard EQ bands for this headphone
 - `limits.bandGainDb` — `[min, max]` per-band gain floor and ceiling in dB
 - `limits.preampDb` — `[min, max]` overall preamp floor and ceiling in dB
+- `limits.q` — `[min, max]` Q factor bounds for bands; ft1pro: `[0.3, 5]`; injected into the `optimizeForPreamp` EqGen prompt as validation bounds
+- `limits.freqHz` — `[min, max]` frequency range in Hz; ft1pro: `[20, 20000]`; injected into the `optimizeForPreamp` EqGen prompt as validation bounds
 - `limits.clipHeadroomDb` — minimum headroom to leave before the 0 dBFS ceiling; used by `headroomVerdict()` and `autoTrim()`
 - `houseNotes` — free-text string injected verbatim into every [[eqgen]] generation prompt as the "chain context" section. Describes preamp defaults, driver characteristics, and the primary EQ levers for the headphone.
 

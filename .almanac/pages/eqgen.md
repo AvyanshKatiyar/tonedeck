@@ -88,7 +88,9 @@ The generation prompt includes three main sections:
 
 2. **Song identity**: title, artist, album.
 
-3. **Instructions + rules**: band types, frequency range, gain bounds, preamp bounds (all from `profile.limits`).
+3. **Instructions + rules**: band types, frequency range, gain bounds, preamp bounds (all from `profile.limits`). Note: `buildPrompt` only uses `bandGainDb` and `preampDb`; `buildOptimizePrompt` additionally injects `q` and `freqHz` bounds from the profile.
+
+4. **Expected JSON shape**: The prompt explicitly requests `{ preamp, intent, notes, bands }`. The `notes` field is a one-sentence tuning rationale; `eqgen.ts` stores it directly in `preset.notes` when present.
 
 ### Prompt Evolution
 
