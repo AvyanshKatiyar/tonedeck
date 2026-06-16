@@ -7,6 +7,10 @@ sources:
     type: file
     path: packages/daemon/src/eqgen.ts
     note: All code claims in this page.
+  - id: eqgen-dist
+    type: file
+    path: packages/daemon/dist/eqgen.js
+    note: Compiled output the running daemon actually executes; may lag src after prompt edits.
   - id: eqgen-test
     type: file
     path: packages/daemon/test/eqgen.test.ts
@@ -19,6 +23,10 @@ sources:
     type: commit
     id: 40bb28f
     note: "fix(daemon): eqgen spawns claude with stdin ignored — explains why stdin must be 'ignore' in batch use."
+  - id: session-build-drift
+    type: session
+    session_id: 4c9fa884-2cf0-4e63-a174-2de2bcf966d5
+    note: Session on 2026-06-17 that received the conservative prompt from dist/eqgen.js 20 minutes after src/eqgen.ts was updated to decisive — confirms the build drift risk.
 status: active
 verified: 2026-06-17
 ---
@@ -105,6 +113,8 @@ The current instruction is deliberately anti-conservative:
 > "Be decisive, not generic: a dull/dark mix should gain real top-end air; a harsh/loud modern master should get firm presence/upper-mid cuts … Two genuinely different-sounding songs MUST get genuinely different curves — do NOT default to one safe house shape for everything. Use as much of the available range as the track honestly needs."
 
 The shift from conservative to decisive was motivated by observing that the conservative prompt led to a corpus of near-identical curves, defeating the point of per-track tuning.
+
+> **Build drift risk**: prompt changes in `src/eqgen.ts` do not take effect until the daemon is rebuilt from source. The running daemon executes `dist/eqgen.js`, not the TypeScript source. On 2026-06-17, `src/eqgen.ts` was updated to the decisive prompt at 22:51 but `dist/eqgen.js` had last been built at 22:31 — a 20-minute lag. Session `4c9fa884` triggered by AutoDJ that evening still received the conservative prompt. [@session-build-drift] [@eqgen-dist] The only reliable check is to inspect the dist file directly; comparing mtime is unreliable if the build system caches.
 
 ## Provenance
 

@@ -15,6 +15,10 @@ sources:
     type: session
     session_id: 3f9795f1-ad87-427f-9ab5-143182ed5c9f
     note: Session creating track-closed-on-sunday; shows the album-preset reference pattern and confirms the schema gotcha (missing provenance/version/createdAt/updatedAt → exit code 2).
+  - id: session-closed-on-sunday-2
+    type: session
+    session_id: 4c9fa884-2cf0-4e63-a174-2de2bcf966d5
+    note: Second session attempting track-closed-on-sunday; demonstrates the label-vs-title schema gotcha variant — model wrote "label" instead of "title" and omitted profile/provenance/version/createdAt/updatedAt.
 status: active
 verified: 2026-06-17
 ---
@@ -64,7 +68,9 @@ The skill defines an 8-step workflow [@skill-md]:
    JSON
    ```
 
-   > **Schema gotcha — all fields are required.** The `create --from-json` command validates against the full Zod preset schema. The daemon does **not** auto-populate missing fields from stdin. Omitting any of `profile`, `provenance`, `version`, `createdAt`, or `updatedAt` causes exit code 2 with a validation error listing the missing keys. Use ISO 8601 strings for `createdAt`/`updatedAt` (they can be identical). `version` starts at `1`.
+   > **Schema gotcha — all fields are required.** The `create --from-json` command validates against the full Zod preset schema. The daemon does **not** auto-populate missing fields from stdin. Omitting any of `title`, `profile`, `provenance`, `version`, `createdAt`, or `updatedAt` causes exit code 2 with a validation error listing the missing keys. Use ISO 8601 strings for `createdAt`/`updatedAt` (they can be identical). `version` starts at `1`.
+   >
+   > **`label` is not a valid field.** The correct key for the display name is `title` (a required `string` ≥ 1 char). A recurring mistake is writing `"label": "Song — Artist"` instead of `"title": "Song"` — this is a contamination from the [[eqgen]] response format, which requests `{ preamp, intent, notes, bands }` with no `title`. When the agent composes the full create-JSON from the eqgen-style prompt output, it must use `title`, not `label`. [@session-closed-on-sunday-2]
    >
    > **Field names on the wire differ from `preset.md`.** The JSON key is `profile` (not `profileId`), and `createdAt`/`updatedAt` live at the top level (not inside `provenance`). `provenance` holds only `createdBy` (string) and `history` (empty array at creation).
    >
