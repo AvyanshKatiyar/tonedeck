@@ -1,55 +1,106 @@
-# ToneDeck
+<div align="center">
 
-Per-album (and per-song) parametric EQ for macOS — for people who don't know what a lowshelf is.
+# 🎚️ ToneDeck
 
-A local daemon drives [CamillaDSP](https://github.com/HEnquist/camilladsp) over its websocket API; a dark, album-art-forward web UI switches EQ presets glitch-free with one click; and a bundled [Claude Code](https://claude.com/claude-code) skill lets you tune by talking: *"tune All of the Lights"*, *"this sounds harsh"*, *"make it warmer"*, *"go back to the original"*.
+### Studio-grade EQ for your headphones — without touching a single number.
 
+**Per-album, per-song parametric EQ for macOS that you control by *talking*.**
+Pick a record, and your system audio routes through a real DSP engine tuned to *that album's* production. Hear something off? Just say *"this is harsh"* or *"vocals are buried"* — and watch it fix itself, live, with no clicks and no gaps.
 
-<img width="3420" height="2188" alt="image" src="https://github.com/user-attachments/assets/03c2adf1-7532-4eb9-976a-31ff76eca1fc" />
+<br />
 
-## Features
+<img src="./docs/screenshot.png" alt="ToneDeck — the warm, album-art-forward EQ console" width="100%" />
 
-- **Glitch-free live switching** — presets hot-swap over the CamillaDSP websocket; the DSP process never restarts between albums (verified PID-stable).
-- **Art-forward UI** — album grid with artwork (iTunes, cached locally), live EQ frequency-response curve, L/R meters with a clip light, A/B bypass, and an always-visible panic button.
-- **Vibe sliders** — Warmth · Punch · Clarity · Smoothness · Sparkle map plain-language taste onto the underlying biquads, with live preview while you drag.
-- **Songs, not just albums** — per-track presets (`kind: "track"`) designed as deltas off their album's preset; add them from the UI's Album/Song search or by asking Claude.
-- **Claude Code skill** — a complete tuning methodology (band guide, symptom→band map, worked examples) so Claude designs presets from real production knowledge and iterates from your words, through the CLI only.
-- **Versioned with undo** — every save snapshots the previous version; `tonedeck revert` undoes the last change, `--original` restores factory values. Nothing is ever lost.
-- **Safety rails in the engine, not the callers** — gain clamps per headphone profile, predicted-headroom auto-trim against clipping, `camilladsp --check` before every apply, a guard against the BlackHole "silence trap", watchdogs that self-heal when macOS steals the output device or the DSP dies, and a panic path that works even with the daemon dead.
+<br />
 
-## Requirements
+*A control plane for [CamillaDSP](https://github.com/HEnquist/camilladsp), wrapped in an interface that feels like your favorite music app — and a brain that speaks your language.*
 
-macOS (Apple Silicon or Intel), plus:
+</div>
+
+---
+
+## Why ToneDeck exists
+
+Every pair of headphones colors the sound. Every album was mixed differently. The fix — parametric EQ — has existed for decades, but the tools are hostile: cryptic band tables, Q factors, dB-per-octave, and a real risk of blowing out your ears if you get it wrong.
+
+So almost nobody does it. People live with bass that's too loud on one record and vocals that vanish on the next.
+
+**ToneDeck makes per-album EQ feel effortless.** Browse your library like a streaming app. Click an album to go live. Nudge five plain-English sliders, or just *describe what's wrong* and let Claude design the curve from real production knowledge. The DSP swaps presets seamlessly between songs, the engine refuses to clip your ears, and a panic button always gives you your audio back.
+
+---
+
+## ✨ What you get
+
+### 🗣️ Tune by talking — not by guessing
+Describe the sound, get the fix. *"Tune Madvillainy for my headphones"* → Claude reads the album's production character and designs a preset. *"Too much bass"* / *"add some air"* → small, reasoned band moves, logged with your own words as the change history. *"Undo that"* / *"back to the original"* → one-word revert. No DSP vocabulary required, ever.
+
+### 🎛️ Five sliders that actually make sense
+**Warmth · Punch · Clarity · Smoothness · Sparkle.** Plain-language taste maps straight onto the underlying biquad filters, with a live preview while you drag. You hear the change before you commit it.
+
+### 💿 Per-album *and* per-song
+EQ isn't one-size-fits-all and neither is ToneDeck. Tune a whole album, then carve out individual tracks as deltas off the album curve. Your library, your taste, remembered per record.
+
+### ⚡ Glitch-free live switching
+Presets hot-swap over the CamillaDSP websocket — the DSP process **never restarts** between albums (verified PID-stable). No pops, no dropouts, no silence. It just changes.
+
+### 🎨 An interface that earns its place next to your music app
+A warm, album-art-forward UI: **Your Library** sidebar, a live EQ frequency-response curve, a real-time level visualizer, L/R meters with a clip light, and **A/B bypass** so you can hear the EQ against flat instantly. Album art loads automatically and *self-heals* — new presets fetch their cover on first view and cache it forever.
+
+### 🤖 Auto-EQ that follows along
+Arm Auto-EQ and ToneDeck follows what's playing in Apple Music, tuning each new song as it starts — and politely yielding the moment you take manual control.
+
+### 🔊 Optimize for loudness
+One click re-balances the whole curve for a target preamp via Claude, so you can chase loudness without clipping.
+
+### 🛡️ Safety built into the engine, not bolted on
+Per-headphone gain clamps. Predicted-headroom auto-trim against clipping. `camilladsp --check` before *every* apply. Watchdogs that self-heal when macOS steals your output device or the DSP dies. And a **panic path that works even if the daemon is dead** — your ears come first.
+
+### ↩️ Versioned, with nothing ever lost
+Every save snapshots the previous version. `revert` undoes the last change; `--original` restores factory values. Experiment freely.
+
+---
+
+## 🚀 Get started
+
+**Requirements** — macOS (Apple Silicon or Intel) and a few audio building blocks:
 
 ```sh
-brew install blackhole-2ch                      # virtual loopback device
-brew install camilladsp                         # the DSP engine (≥ 2.0; built on 4.x)
-brew install switchaudio-osx                    # output-device switching
+brew install blackhole-2ch      # virtual loopback device (routes system audio in)
+brew install camilladsp         # the DSP engine (built on 4.x)
+brew install switchaudio-osx    # output-device switching
 # Node.js ≥ 22
 ```
 
-The included headphone profile is for the **FiiO FT1 Pro** (`profiles/ft1pro.json`). For other headphones, copy it, adjust the band template/limits/device name, and point your presets' `profile` field at it.
-
-## Install
+**Install** — one script wires up everything:
 
 ```sh
 git clone https://github.com/AvyanshKatiyar/tonedeck && cd tonedeck
-./scripts/install.sh          # builds, installs CLI + panic script, generates the
-                              # LaunchAgent for this machine, registers the Claude skill
+./scripts/install.sh     # builds, installs the CLI + panic script, generates the
+                         # LaunchAgent for this machine, registers the Claude skill
 open http://127.0.0.1:5055
 ```
 
-Click an album → ToneDeck routes system audio through BlackHole into CamillaDSP and out to your headphones. The **Engage/Disengage** button controls whether ToneDeck owns audio at all; **panic** (UI button or `tonedeck-panic` in a terminal) always returns audio to a real device. `./scripts/uninstall.sh` reverses everything but keeps your presets.
+Click an album → ToneDeck routes system audio through BlackHole into CamillaDSP and out to your headphones. **Engage/Disengage** controls whether ToneDeck owns audio at all; **panic** (UI button or `tonedeck-panic` in any terminal) always hands audio back to a real device. `./scripts/uninstall.sh` reverses everything but keeps your presets.
 
-## Talk to it
+> The bundled headphone profile targets the **FiiO FT1 Pro** (`profiles/ft1pro.json`). For other headphones, copy it, adjust the band template / limits / device name, and point your presets' `profile` field at it.
 
-With [Claude Code](https://claude.com/claude-code) installed, the skill is registered by the installer:
+---
 
-> *"tune Madvillainy for my headphones"* → Claude designs a preset from the album's production character, applies it, verifies, and asks how it sounds.
-> *"vocals are buried"* / *"too much bass"* → small, reasoned band moves, logged with your words as the change history.
+## 🗣️ Talk to it
+
+With [Claude Code](https://claude.com/claude-code) installed, the tuning skill is registered automatically by the installer:
+
+> *"tune Madvillainy for my headphones"* → Claude designs a preset from the album's production character, applies it, verifies it, and asks how it sounds.
+>
+> *"vocals are buried"* / *"too much bass"* → small, reasoned band moves, logged with your words.
+>
 > *"undo that"* / *"back to the original"* → built-in revert.
 
-## CLI
+The skill ships a complete tuning methodology — a band guide, a symptom→band map, and worked examples — so Claude tunes from real production knowledge instead of guessing.
+
+---
+
+## ⌨️ Or drive it from the terminal
 
 | Command | What it does |
 |---|---|
@@ -58,14 +109,16 @@ With [Claude Code](https://claude.com/claude-code) installed, the skill is regis
 | `tonedeck on [slug]` / `off` / `panic` | Engage / disengage / emergency stop |
 | `tonedeck apply <slug>` | Switch preset (glitch-free) |
 | `tonedeck bypass on\|off` | A/B against flat |
-| `tonedeck tweak <slug> --vibe warmth=1` | Vibe or `--band`-level adjustments |
+| `tonedeck tweak <slug> --vibe warmth=1` | Vibe- or `--band`-level adjustments |
 | `tonedeck revert <slug> [--original\|--to N]` | Undo / restore any version |
 | `tonedeck create --from-json -` | New preset from stdin JSON |
 | `tonedeck meters --watch` | Live RMS/peak/clip readout |
 
 Every verb takes `--json` (machine output, stable exit codes) — the CLI is the contract the Claude skill drives, and the seam a future MCP server will wrap.
 
-## How it works
+---
+
+## 🔧 How it works
 
 ```
 Mac audio → BlackHole 2ch → CamillaDSP (biquad EQ) → your headphones
@@ -73,12 +126,14 @@ Mac audio → BlackHole 2ch → CamillaDSP (biquad EQ) → your headphones
                             daemon (Fastify, :5055) ← UI / CLI / Claude skill
 ```
 
-Presets are canonical JSON (`presets/builtin/`, user copies in `~/.tonedeck/presets/`); CamillaDSP YAML is a generated artifact. The devices block is byte-identical across presets by construction — that's what makes hot-swapping seamless. The daemon is a control plane: it can restart freely without killing audio, and re-adopts a running DSP on boot.
+Presets are canonical JSON (`presets/builtin/`, user copies in `~/.tonedeck/presets/`); the CamillaDSP YAML is a generated artifact. The devices block is **byte-identical across presets by construction** — that's what makes hot-swapping seamless. The daemon is a pure control plane: it can restart freely without killing audio, and re-adopts a running DSP on boot. Album artwork is resolved from iTunes, cached locally, and persisted back to the preset so covers survive cache clears.
 
-## Development
+---
+
+## 🧪 Development
 
 ```sh
-npm install && npm run build && npm test   # 260+ tests, no audio hardware needed
+npm install && npm run build && npm test   # 300+ tests, no audio hardware needed
 npm run typecheck
 npm run dev:daemon                          # daemon in watch mode
 npm run smoke:control                       # live end-to-end battery (needs camilladsp)
@@ -90,6 +145,12 @@ Monorepo: `packages/shared` (schema, RBJ biquad math, safety, YAML emitter) · `
 
 If audio ever sounds wrong: [RECOVERY.md](RECOVERY.md).
 
-## License
+---
+
+<div align="center">
+
+**ToneDeck** — your headphones, finally tuned to the music.
 
 [MIT](LICENSE)
+
+</div>
