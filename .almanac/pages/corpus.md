@@ -93,6 +93,28 @@ interface CorpusItem {
 
 The `slug` is the stable preset identity key. If two catalog entries normalize to the same slug they are the same song.
 
+## Risk: Legacy `track-*` Slug Naming Bypasses Resumability
+
+Before the corpus build workflow existed, track presets were created manually (via the [[claude-skill]] or directly) using a `track-{title}` slug pattern — e.g., `track-all-of-the-lights`, `track-after-dark-mrkitty`, `track-everything-we-need`.
+
+The corpus build computes slugs via `slugify(artist, title)`, which produces `{artist}-{title}` slugs — e.g., `kanye-west-all-of-the-lights`, `mr-kitty-after-dark`, `kanye-west-everything-we-need-feat-ty-dolla-ign-ant-clemons`.
+
+Because resumability is an exact slug match (`existing.has(slug)`), a legacy `track-{title}` preset is invisible to the corpus build. The pipeline generates and saves a second preset for the same song under a different slug.
+
+As of 2026-06-16, `~/.tonedeck/presets/` contains 29 presets with the `track-*` prefix alongside 60 without it. Confirmed duplicates (two distinct preset files for the same recording):
+
+| Legacy slug (`track-*`) | Corpus slug (`{artist}-{title}`) |
+|---|---|
+| `track-all-of-the-lights` | `kanye-west-all-of-the-lights` |
+| `track-after-dark-mrkitty` | `mr-kitty-after-dark` |
+| `track-everything-we-need` | `kanye-west-everything-we-need-feat-ty-dolla-ign-ant-clemons` |
+
+**Downstream consequence for clustering**: `GET /api/clusters` calls `store.allPresets()`, which returns both slugs. The same song's two presets may land in different clusters if the curves diverge (each was generated in a separate EqGen call). Cluster membership counts are inflated; cross-cluster gap analysis is noisy.
+
+**Remediation options** (not yet implemented):
+1. Migrate legacy `track-*` presets on disk to `{artist}-{title}` slugs so dedup recognizes them.
+2. Extend the corpus build's dedup to also check the `track-{title}` variant of each song before queuing.
+
 ## Related Pages
 
 - [[catalog]] — source of the song work-list
