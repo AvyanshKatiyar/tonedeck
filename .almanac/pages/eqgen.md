@@ -31,6 +31,10 @@ sources:
     type: session
     session_id: 54e64805-6896-4d25-8cb5-b23a81ce4ef8
     note: Session on 2026-06-16 (branch feat/eq-clustering-corpus) where the tonedeck-eq skill activated during a batch eqgen call and Claude read band-guide.md before returning JSON — confirms skill activation in automated mode.
+  - id: session-sdk-eqgen-prompt
+    type: session
+    session_id: 62fb0069-fa8d-45a0-8cdb-d8b4846d8161
+    note: Session on 2026-06-16 (branch feat/eq-clustering-corpus) where the eqgen-style prompt was delivered via SDK (sdk-cli entrypoint) instead of claude -p. The agent ran the full 8-step skill workflow — tonedeck status, tonedeck list, tonedeck show — confirming that the JSON-only instruction does NOT suppress CLI tool use when Bash is available via SDK.
 status: active
 verified: 2026-06-17
 ---
@@ -72,7 +76,9 @@ spawn('claude', ['-p', '--model', 'sonnet', prompt], {
 
 The `tonedeck-eq` Claude Code skill fires even in automated `claude -p` calls. The SessionStart hook that loads the skill listing runs unconditionally, regardless of whether the session is interactive or batch. When the model sees the EQ-tuning prompt it matches the `tonedeck-eq` trigger and invokes the skill — then reads `references/band-guide.md` as musical domain knowledge before producing the response. [@session-skill-activation]
 
-The explicit **"Respond with ONLY a JSON object, no prose"** instruction in the eqgen prompt overrides the skill's 8-step CLI workflow. No `tonedeck status --json`, `tonedeck list --json`, or other commands are executed. The band guide is used for design reasoning only.
+In `claude -p` calls, the explicit **"Respond with ONLY a JSON object, no prose"** instruction suppresses the skill's 8-step CLI workflow. No `tonedeck status --json`, `tonedeck list --json`, or other commands are executed. The band guide is used for design reasoning only. The reason this works is mechanical: `claude -p` does not expose the Bash tool, so even if the skill activates and the agent wants to run CLI commands, it has no means to do so.
+
+**SDK sessions behave differently.** When the same eqgen-style prompt is delivered via an SDK (`sdk-cli`) entrypoint rather than `claude -p`, the agent has full tool access. In that mode the skill activates and the agent executes the complete 8-step workflow — `tonedeck status --json`, `tonedeck list --json`, `tonedeck show`, etc. — before producing any output. The JSON-only instruction alone is not sufficient to suppress CLI tool use when the Bash tool is available. [@session-sdk-eqgen-prompt] The corpus build pipeline correctly uses `claude -p`; any refactoring that shifts generation to the SDK would need an explicit `--allowedTools []` constraint or equivalent to preserve the batch semantics.
 
 **Coupling implication:** `skill/tonedeck-eq/references/band-guide.md` is shared domain knowledge for both interactive sessions and batch corpus generation. A change to the band guide — e.g., adjusting the safe ranges for a band, changing the harshness-first philosophy, or editing the FT1 Pro house notes — propagates to both paths. This is the opposite of what you'd expect from a tool described as "interactive only." Future agents editing the band guide should treat it as affecting corpus EQ quality, not just user-facing tuning sessions.
 
