@@ -1,14 +1,18 @@
 ---
+title: Claude Skill — Interactive Natural-Language EQ Tuning
+summary: How the tonedeck-eq Claude Code skill handles both creating new presets from scratch and adjusting existing ones via the CLI.
 topics: [stack, flows, concepts]
 sources:
   - id: skill-md
     type: file
     path: skill/tonedeck-eq/SKILL.md
-    note: Defines the 8-step workflow, band guide, and symptom map.
+    note: Defines the full 8-step workflow, hard rules, band guide, symptom map, and references.
   - id: skill-refs
     type: file
     path: skill/tonedeck-eq/references/
-    note: Worked examples referenced by the skill.
+    note: band-guide.md, symptom-map.md, and worked-examples.md referenced by the skill.
+status: active
+verified: 2026-06-17
 ---
 
 # Claude Skill
@@ -19,52 +23,68 @@ The ToneDeck Claude Code skill at `skill/tonedeck-eq/SKILL.md` teaches Claude ho
 
 The Claude skill and [[eqgen]] are two separate Claude integration paths in ToneDeck:
 
-- **This skill** is *interactive*. It runs inside a Claude Code session, interprets the user's natural-language request, then executes `tonedeck tweak` and `tonedeck get` CLI commands step by step. It adjusts an existing preset incrementally (≤1.5 dB per step per band).
-- **EqGen** is *automated and batch*. It builds a structured prompt and spawns `claude -p` directly, expecting a raw JSON EQ configuration for a new track preset. No CLI commands, no iterative workflow, no user in the loop. Used by the [[corpus]] build pipeline.
+- **This skill** is *interactive*. It runs inside a Claude Code session, interprets the user's natural-language request, and drives everything through `tonedeck` CLI commands step by step. It can **create new presets from scratch** or **adjust existing ones incrementally** (≤1.5 dB per step per band).
+- **EqGen** is *automated and batch*. It builds a structured prompt and spawns `claude -p` directly, expecting a raw JSON EQ configuration. No CLI commands, no iterative workflow, no user in the loop. Used by the [[corpus]] build pipeline and [[autodj]] for on-demand generation.
 
-## Contract
+## Workflow
 
-The skill defines an 8-step workflow:
+The skill defines an 8-step workflow [@skill-md]:
 
-1. Read the request (what the listener wants to change sonically).
-2. Run `tonedeck get <slug>` to see the current preset state.
-3. Identify which [[band]]s are relevant to the request using the band guide and symptom map.
-4. Compute proposed gain changes: ≤1.5 dB per step per band.
-5. Apply via `tonedeck tweak <slug> --band <id>=<gain> [...]` (CLI only — never direct file edits).
-6. Read back the saved preset to confirm the change landed.
-7. Relay any warnings returned by the server (from [[safety]]).
-8. Report what was changed and why.
+1. **Know the state first.** Run `tonedeck status --json` (or `tonedeck doctor` if audio seems broken) and read `engaged`, `activePreset`, and `bypass` before acting.
+2. **Find the existing preset.** `tonedeck list --json`, then `tonedeck show <slug> --json`. Never create a duplicate.
+3. **For a new album/artist/genre/track** (no existing preset): design from music knowledge (era, mastering style, genre traits), compose the preset JSON, and create it via stdin:
+   ```bash
+   tonedeck create --from-json - <<'JSON'
+   { "schemaVersion":1, "slug":"...", "kind":"album", ... }
+   JSON
+   ```
+   If `engaged:true`, add `--apply` to hear it immediately. `create --apply` applies but does not engage on its own; use `tonedeck on <slug>` to engage if needed.
+4. **Read the response and relay warnings.** The daemon may clamp gains and auto-trim the preamp. Every warning must be relayed to the user in plain words. Never fight or hide them.
+5. **Verify.** `tonedeck status --json` → confirm `activePreset` is the correct slug. Watch `clippedSamples`.
+6. **Ask how it sounds.** Never declare success — the user's ears are the only test.
+7. **Iterate from their words** (`references/symptom-map.md`). Make **small relative** `tweak` moves: **≤1.5 dB per band per step**. Always pass `--reason "<the user's actual words>"` so the preset history reads like a tuning diary.
+8. **Pick the right tool.** Vague request ("warmer", "punchier") → `--vibe`. Specific symptom ("3 kHz is harsh", "too sibilant") → `--band`.
 
-## Hard rules
+## Hard Rules
 
-- **CLI only.** The skill must never read or write preset JSON files directly. All edits go through `tonedeck tweak` or other CLI commands.
-- **≤1.5 dB per step.** Each workflow execution changes any given band by at most 1.5 dB. Multiple steps are required for larger adjustments. This prevents overcorrection.
-- **Relay warnings.** If the daemon returns a headroom warning after a save, the skill must surface it to the user verbatim.
-- **Revert for undo.** The correct undo command is `tonedeck revert <slug>`, not a manual gain reversal. The skill should suggest this rather than computing the inverse delta.
+- **CLI only.** Never edit preset JSON files on disk, never touch `~/.tonedeck` or CamillaDSP directly. Everything is a `tonedeck` command.
+- **Audio broken or "my ears hurt" → `tonedeck panic` first, then `tonedeck doctor`.** Fix state before any tuning.
+- **≤1.5 dB per step.** Each workflow execution changes any given band by at most 1.5 dB. Multiple steps are required for larger adjustments.
+- **Relay every warning** the CLI returns. A clamp or auto-trim that is silenced is a violation.
+- **Never use `--no-clamp` or `--no-auto-trim`** unless the user explicitly demands it and has been warned it removes the clipping safety net.
+- **`tweak --band` only moves bands already in the preset or in the 6-band FT1 Pro template.** A new surgical band (e.g. `DeEss`, `MudCut`, `SubTame`) must be baked into the preset JSON at `create` time. It cannot be added with `tweak`.
+- **Undo is built in — never hand-reverse a tweak.** `tonedeck revert <slug>` undoes the last saved change; `tonedeck revert <slug> --original` restores v1; `tonedeck versions <slug>` lists history.
+- **Editing a loud builtin auto-trims its preamp.** Shipped presets run "hot"; the first `tweak` or apply-through-edit re-runs safety and may drop the preamp ~2 dB. Relay this if the user says "too quiet."
 
-## Band guide
+## Band Guide
 
 The skill's band guide maps frequency regions to sonic character for the FiiO FT1 Pro's template bands:
-- Bass (60 Hz): body, warmth, sub energy
-- KickBody (120 Hz): punch, fullness, upper bass
-- LowMidClean (250 Hz): muddiness zone — cutting here often clears mix congestion
-- UpperMidTame (3200 Hz): harshness, attack edge, the FT1 Pro's known brightness peak
-- PresenceTame (5000 Hz): sibilance, edge, forward vocal presence
-- Air (10 kHz): openness, sparkle, cymbal detail
 
-## Symptom map
+| Band id | Type | Freq | Sonic role |
+|---|---|---|---|
+| Bass | lowshelf | 60 Hz | body, warmth, sub energy |
+| KickBody | peaking | 120 Hz | punch, fullness, upper bass |
+| LowMidClean | peaking | 250 Hz | muddiness zone — cut to clear mix congestion |
+| UpperMidTame | peaking | 3200 Hz | harshness, attack edge, FT1 Pro brightness peak |
+| PresenceTame | peaking | 5000 Hz | sibilance, edge, forward vocal presence |
+| Air | highshelf | 10 kHz | openness, sparkle, cymbal detail |
 
-The skill provides a direct mapping from listener complaints to band targets:
+## Symptom Map
+
 - "too harsh / too bright" → cut UpperMidTame and/or PresenceTame
 - "lacking body / too thin" → boost Bass and/or KickBody
 - "muddy / congested" → cut LowMidClean
 - "too polite / missing air" → boost Air
 - "too sibilant" → cut PresenceTame
 
-## Vibes vs. direct band edits
+## Vibes vs. Direct Band Edits
 
-The skill can use either `--vibe <name>=<step>` flags or direct `--band <id>=<gain>` flags on `tonedeck tweak`. Vibes are appropriate for general taste adjustments; direct band edits are appropriate for specific frequency corrections. When using [[vibes]], the 1.5 dB-per-step rule applies to the net change in any band's gain.
+`tonedeck tweak --vibe <name>=<step>` for vague taste requests; `--band <id>=<gain>` for specific frequency corrections. The 1.5 dB-per-step rule applies to the net change in any band's gain when using either path. See [[vibes]] for the vibe definitions.
 
-## Worked examples
+## References in the Skill
 
-The `skill/tonedeck-eq/references/` directory contains worked examples showing how to handle common requests — from a simple "make it warmer" to multi-band corrections for complex sonic problems.
+`skill/tonedeck-eq/references/` contains three documents loaded by Claude on demand:
+
+- `band-guide.md` — when designing a new preset or deciding which band a symptom maps to
+- `symptom-map.md` — a lookup table: listener words → bands → direction + first-step size → concrete `tweak` command
+- `worked-examples.md` — three complete transcripts: tuning a new album from scratch, fixing a complaint, and a one-step vibe adjustment

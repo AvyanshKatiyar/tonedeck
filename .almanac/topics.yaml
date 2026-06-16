@@ -5,7 +5,7 @@ topics:
 
   - slug: systems
     title: Systems
-    description: Custom subsystems built in this repo — Lifecycle, PresetStore, CdspClient, SafetyRails, CamillaYaml emitter, Vibes engine, MeterBroadcaster, EqGen, and corpus build.
+    description: Custom subsystems built in this repo — Lifecycle, PresetStore, CdspClient, SafetyRails, CamillaYaml emitter, Vibes engine, MeterBroadcaster, EqGen, AutoDJ, and corpus build.
 
   - slug: corpus
     title: Corpus
@@ -29,7 +29,7 @@ topics:
 
   - slug: daemon
     title: Daemon
-    description: The Fastify HTTP+WebSocket daemon in packages/daemon — routes, dependency injection, WebSocket meters, and SIGTERM behavior.
+    description: The Fastify HTTP+WebSocket daemon in packages/daemon — routes, dependency injection, WebSocket meters, AutoDJ wiring, and SIGTERM behavior.
 
   - slug: cli
     title: CLI
