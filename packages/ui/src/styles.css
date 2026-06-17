@@ -31,6 +31,9 @@
   --danger: #e22134;
   --danger-soft: rgba(226, 33, 52, 0.16);
 
+  --good: #2bd576;          /* services live */
+  --warn: #e0a92e;          /* standby / EQ engine idle */
+
   --radius-panel: 8px;
   --radius-card: 6px;
   --radius-art: 4px;
@@ -418,6 +421,52 @@ button {
   height: 7px;
   border-radius: 50%;
   background: var(--accent);
+}
+/* service-health pill (daemon + CamillaDSP engine) */
+.pill--status {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--text);
+  border: none;
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  white-space: nowrap;
+}
+.pill--status::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--faint);
+}
+.pill--live::before {
+  background: var(--good);
+  box-shadow: 0 0 8px 0 var(--good);
+  animation: statusPulse 2.4s ease-in-out infinite;
+}
+.pill--standby::before {
+  background: var(--warn);
+}
+.pill--offline::before {
+  background: var(--danger);
+}
+@keyframes statusPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pill--live::before {
+    animation: none;
+  }
 }
 .tb__icon {
   width: 32px;
