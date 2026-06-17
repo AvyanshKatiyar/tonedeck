@@ -11,18 +11,21 @@
 #   ./scripts/install.sh              # live install
 #   ./scripts/install.sh --dry-run    # preview without executing
 #   ./scripts/install.sh --no-build   # skip npm steps (already built)
+#   ./scripts/install.sh --no-launcher # skip the Desktop ToneDeck.app launcher
 
 set -euo pipefail
 
 # ── flags ─────────────────────────────────────────────────────────────────────
 DRY_RUN=0
 NO_BUILD=0
+NO_LAUNCHER=0
 for arg in "$@"; do
   case "$arg" in
-    --dry-run)  DRY_RUN=1 ;;
-    --no-build) NO_BUILD=1 ;;
+    --dry-run)     DRY_RUN=1 ;;
+    --no-build)    NO_BUILD=1 ;;
+    --no-launcher) NO_LAUNCHER=1 ;;
     *)
-      print -u2 "Unknown flag: $arg (valid: --dry-run, --no-build)"
+      print -u2 "Unknown flag: $arg (valid: --dry-run, --no-build, --no-launcher)"
       exit 2
       ;;
   esac
@@ -204,8 +207,17 @@ fi
 run "launchctl bootstrap 'gui/$(id -u)' '${PLIST_DEST}'"
 run "launchctl kickstart -k 'gui/$(id -u)/${PLIST_LABEL}'"
 
-# ── Step 9: Verification ───────────────────────────────────────────────────────
-step "9. Verification"
+# ── Step 9: Desktop launcher (ToneDeck.app) ───────────────────────────────────
+step "9. Create Desktop launcher"
+if (( NO_LAUNCHER )); then
+  print "  --no-launcher: skipping ToneDeck.app"
+else
+  print "  building ${HOME}/Desktop/ToneDeck.app (double-click to open the UI)"
+  run "'${SCRIPT_DIR}/make-launcher.sh'"
+fi
+
+# ── Step 10: Verification ──────────────────────────────────────────────────────
+step "10. Verification"
 if (( DRY_RUN )); then
   print "  DRY-RUN: skipping live verification"
   print ""
