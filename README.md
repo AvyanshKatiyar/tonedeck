@@ -76,9 +76,12 @@ brew install switchaudio-osx    # output-device switching
 ```sh
 git clone https://github.com/AvyanshKatiyar/tonedeck && cd tonedeck
 ./scripts/install.sh     # builds, installs the CLI + panic script, generates the
-                         # LaunchAgent for this machine, registers the Claude skill
+                         # LaunchAgent for this machine, registers the Claude skill,
+                         # and drops a ToneDeck.app launcher on your Desktop
 open http://127.0.0.1:5055
 ```
+
+**Launch it like an app.** The installer drops a double-clickable **`ToneDeck.app`** on your Desktop — carrying a custom EQ-faders icon — that makes sure the daemon is up and opens the UI in a clean, chromeless app-mode window (its own isolated browser profile, so it stays out of your main browser). Drag it to the Dock or Applications if you like. Skip it at install time with `./scripts/install.sh --no-launcher`, or (re)build it anytime with `./scripts/make-launcher.sh`. The same EQ icon is the UI's favicon, and the top bar shows a **live / standby / offline** status pill so you can tell at a glance whether the daemon and CamillaDSP engine are running.
 
 Click an album → ToneDeck routes system audio through BlackHole into CamillaDSP and out to your headphones. **Engage/Disengage** controls whether ToneDeck owns audio at all; **panic** (UI button or `tonedeck-panic` in any terminal) always hands audio back to a real device. `./scripts/uninstall.sh` reverses everything but keeps your presets.
 
