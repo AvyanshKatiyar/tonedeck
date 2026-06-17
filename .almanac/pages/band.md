@@ -17,7 +17,7 @@ A Band is one parametric EQ filter within a [[preset]]. The [[profile]] template
 
 ## Biquad math
 
-All EQ math is in [[`packages/shared/src/biquad.ts`]] and implements the RBJ Audio EQ Cookbook formulas. The sample rate is fixed at 48000 Hz across all configs.
+All EQ math is in [[packages/shared/src/biquad.ts]] and implements the RBJ Audio EQ Cookbook formulas. The sample rate is fixed at 48000 Hz across all configs.
 
 `biquadCoeffs(type, freq, q, gain, samplerate)` returns the five normalized IIR coefficients `{b0, b1, b2, a1, a2}`. The three supported filter types each use a different RBJ formula:
 - `lowshelf` — boosts or cuts all frequencies below `freq`, with the shelf knee at `freq`

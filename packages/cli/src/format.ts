@@ -2,7 +2,23 @@
  * Human-readable formatters — plain padEnd tables, no external deps.
  */
 
-import type { Preset } from '@tonedeck/shared'
+import type { Preset, ClusterResult } from '@tonedeck/shared'
+
+export function fmtClusters(r: ClusterResult): string {
+  if (r.clusters.length === 0) return 'No presets to cluster.'
+  const lines: string[] = [`${r.clusters.length} clusters @ threshold ${r.threshold} dB RMS`, '']
+  for (const c of r.clusters) {
+    const gap =
+      c.nearestDistanceDb != null ? ` — nearest cluster ${c.nearestDistanceDb} dB away` : ''
+    lines.push(`● cluster ${c.id} — ${c.members.length} songs — ${c.character}${gap}`)
+    for (const m of c.members.slice(0, 12)) {
+      lines.push(`    ${m.title}${m.artist ? ` — ${m.artist}` : ''}`)
+    }
+    if (c.members.length > 12) lines.push(`    …and ${c.members.length - 12} more`)
+    lines.push('')
+  }
+  return lines.join('\n').trimEnd()
+}
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 

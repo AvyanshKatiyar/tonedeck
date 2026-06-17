@@ -1,6 +1,16 @@
 ---
+title: Profile — Headphone Profile Schema and ft1pro
+summary: How headphone profiles define the EQ band template, gain limits, and houseNotes injected into every EqGen prompt; the only shipped profile is ft1pro.
 topics: [concepts, audio]
-files: [packages/shared/src/preset.ts, profiles/ft1pro.json]
+sources:
+  - id: ft1pro-json
+    type: file
+    path: profiles/ft1pro.json
+    note: Only shipped profile; source of bandTemplate, limits, and houseNotes content.
+  - id: preset-ts
+    type: file
+    path: packages/shared/src/preset.ts
+    note: Canonical Zod schema for Profile alongside Preset.
 ---
 
 # Profile
@@ -9,14 +19,19 @@ A Profile describes a headphone model — its suggested EQ band layout and the g
 
 ## Schema fields
 
-The canonical Zod schema is in [[`packages/shared/src/preset.ts`]] alongside the Preset schema.
+The canonical Zod schema is in [[packages/shared/src/preset.ts]] alongside the Preset schema.
 
 - `id` — string identifier, e.g. `'ft1pro'`
-- `label` — human display name
-- `bands` — array of template [[band]] objects, each with `id`, `type`, `freq`, `q`, and `gain` set to `0`; these define the standard EQ bands for this headphone
-- `limits.gain.min` / `limits.gain.max` — per-band gain floor and ceiling in dB
-- `limits.preamp.min` / `limits.preamp.max` — overall preamp floor and ceiling in dB
+- `name` — human display name
+- `playbackDeviceName` — CoreAudio device name for headphone output (e.g., `'External Headphones'`); used by [[camillayaml-emitter]] to configure CamillaDSP's playback device
+- `captureDeviceName` — CoreAudio device name for capture input; defaults to `'BlackHole 2ch'` in the schema
+- `bandTemplate` — array of template [[band]] objects, each with `id`, `type`, `freq`, `q`, and `gain` set to `0`; these define the standard EQ bands for this headphone
+- `limits.bandGainDb` — `[min, max]` per-band gain floor and ceiling in dB
+- `limits.preampDb` — `[min, max]` overall preamp floor and ceiling in dB
+- `limits.q` — `[min, max]` Q factor bounds for bands; ft1pro: `[0.3, 5]`; injected into the `optimizeForPreamp` EqGen prompt as validation bounds
+- `limits.freqHz` — `[min, max]` frequency range in Hz; ft1pro: `[20, 20000]`; injected into the `optimizeForPreamp` EqGen prompt as validation bounds
 - `limits.clipHeadroomDb` — minimum headroom to leave before the 0 dBFS ceiling; used by `headroomVerdict()` and `autoTrim()`
+- `houseNotes` — free-text string injected verbatim into every [[eqgen]] generation prompt as the "chain context" section. Describes preamp defaults, driver characteristics, and the primary EQ levers for the headphone.
 
 ## The only shipped profile: ft1pro
 
@@ -34,6 +49,16 @@ The canonical Zod schema is in [[`packages/shared/src/preset.ts`]] alongside the
 | Air | highshelf | 10000 | 0.7 |
 
 **Limits:** band gain min −8 dB / max +6 dB, preamp min −6 dB / max +4 dB, clipHeadroomDb 3.
+
+**houseNotes** (verbatim from `profiles/ft1pro.json`, injected into every EqGen prompt):
+
+> House default preamp is +2 dB and the tuning leans loud; combined boosts of roughly +5 dB are tolerated with a warning rather than a rejection. The FT1 Pro planar driver takes the 60 Hz bass shelf cleanly without flab. The 3.2 kHz and 5 kHz peaking cuts are the primary harshness levers — reach for those before touching anything else.
+
+Key implications of these notes for EQ generation:
+- The default loudness posture is +2 dB preamp; generated presets should account for this when computing headroom.
+- The safety system allows total boosts up to ~+5 dB before issuing a headroom warning (rather than rejecting outright).
+- The Bass band (60 Hz lowshelf) is a safe lift — the planar driver handles it without bass bloom.
+- UpperMidTame (3.2 kHz) and PresenceTame (5 kHz) are the first-reach harshness levers in the EqGen prompt and the [[claude-skill]] symptom map.
 
 ## Role in the hot-swap guarantee
 

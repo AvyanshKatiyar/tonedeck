@@ -28,3 +28,7 @@ Each builtin was tuned for the [[profile]] `ft1pro` — the FiiO FT1 Pro's six-b
 ## Relationship to the profile template
 
 Every builtin uses all six template bands from `ft1pro` (no added or removed bands). Band frequencies and Q values match the profile template exactly; only the gain values differ per preset.
+
+## Distinction from corpus presets
+
+The 17 builtins cover Kanye West albums (`kind: 'album'`). The [[corpus]] build pipeline adds per-track presets (`kind: 'track'`, `provenance.createdBy: 'claude'`) for songs in the user's personal [[catalog]]. Builtins are seeded once; corpus presets are generated on demand via [[eqgen]]. Both live in `~/.tonedeck/presets/` and are served by the same [[preset-store]].

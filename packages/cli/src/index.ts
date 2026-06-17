@@ -14,6 +14,7 @@ import { CliError, makeCtx, type FetchFn } from './api.js'
 import {
   actionStatus,
   actionList,
+  actionClusters,
   actionShow,
   actionVersions,
   actionRevert,
@@ -111,6 +112,14 @@ program
   .command('list')
   .description('List all presets')
   .action(wrap(isJson, () => actionList(ctx(), { json: isJson() })))
+
+program
+  .command('clusters')
+  .description('Group presets by tone-only EQ shape; show the dB variance that splits them')
+  .option('--threshold <db>', 'RMS dB distance to split clusters (default 1.5)', parseFloat)
+  .action((cmdOpts: { threshold?: number }) =>
+    wrap(isJson, () => actionClusters(ctx(), { json: isJson(), threshold: cmdOpts.threshold }))(),
+  )
 
 program
   .command('show <slug>')

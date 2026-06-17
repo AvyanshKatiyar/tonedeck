@@ -5,7 +5,7 @@ files: [packages/daemon/src/lifecycle.ts]
 
 # Lifecycle
 
-`Lifecycle` is the class in [[`packages/daemon/src/lifecycle.ts`]] that owns all engage/disengage state and controls the CamillaDSP process. It extends `EventEmitter` and is the single authority on whether ToneDeck is engaged, which preset is active, and what the current output device is.
+`Lifecycle` is the class in [[packages/daemon/src/lifecycle.ts]] that owns all engage/disengage state and controls the CamillaDSP process. It extends `EventEmitter` and is the single authority on whether ToneDeck is engaged, which preset is active, and what the current output device is.
 
 ## Persistent state
 

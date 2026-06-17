@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2b2622"/>
+      <stop offset="1" stop-color="#0b0a09"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.24" r="0.72">
+      <stop offset="0" stop-color="#ff8a4c" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#ff8a4c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="fader" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb888"/>
+      <stop offset="0.5" stop-color="#ff8a4c"/>
+      <stop offset="1" stop-color="#e66c2a"/>
+    </linearGradient>
+    <filter id="knobShadow" x="-60%" y="-60%" width="220%" height="220%">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#000" flood-opacity="0.40"/>
+    </filter>
+  </defs>
+
+  <!-- squircle body -->
+  <rect x="96" y="96" width="832" height="832" rx="186" fill="url(#bg)"/>
+  <rect x="96" y="96" width="832" height="832" rx="186" fill="url(#glow)"/>
+  <rect x="96" y="96" width="832" height="832" rx="186" fill="none" stroke="#ffffff" stroke-opacity="0.06" stroke-width="2"/>
+
+  <!-- EQ fader tracks -->
+  <g fill="#ffffff" fill-opacity="0.09">
+    <rect x="282" y="252" width="44" height="520" rx="22"/>
+    <rect x="386" y="252" width="44" height="520" rx="22"/>
+    <rect x="490" y="252" width="44" height="520" rx="22"/>
+    <rect x="594" y="252" width="44" height="520" rx="22"/>
+    <rect x="698" y="252" width="44" height="520" rx="22"/>
+  </g>
+
+  <!-- filled levels (warm ember) -->
+  <g fill="url(#fader)">
+    <rect x="282" y="532.8" width="44" height="239.2" rx="22"/>
+    <rect x="386" y="408.0" width="44" height="364.0" rx="22"/>
+    <rect x="490" y="574.4" width="44" height="197.6" rx="22"/>
+    <rect x="594" y="324.8" width="44" height="447.2" rx="22"/>
+    <rect x="698" y="470.4" width="44" height="301.6" rx="22"/>
+  </g>
+
+  <!-- knobs -->
+  <g filter="url(#knobShadow)">
+    <circle cx="304" cy="532.8" r="30" fill="#fdf4ee" stroke="#000000" stroke-opacity="0.18" stroke-width="1.5"/>
+    <circle cx="408" cy="408.0" r="30" fill="#fdf4ee" stroke="#000000" stroke-opacity="0.18" stroke-width="1.5"/>
+    <circle cx="512" cy="574.4" r="30" fill="#fdf4ee" stroke="#000000" stroke-opacity="0.18" stroke-width="1.5"/>
+    <circle cx="616" cy="324.8" r="30" fill="#fdf4ee" stroke="#000000" stroke-opacity="0.18" stroke-width="1.5"/>
+    <circle cx="720" cy="470.4" r="30" fill="#fdf4ee" stroke="#000000" stroke-opacity="0.18" stroke-width="1.5"/>
+  </g>
+</svg>

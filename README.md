@@ -118,6 +118,22 @@ Every verb takes `--json` (machine output, stable exit codes) — the CLI is the
 
 ---
 
+## 🧬 Corpus & clustering
+
+Build a corpus of songs and group them by *how they want to be EQ'd* — a way to classify music by sound rather than by genre or artist.
+
+| Command | What it does |
+|---|---|
+| `npm run ingest:kanye` | Pull Kanye's discography from the iTunes API into the catalog (no login) |
+| `npm run ingest:apple` | Add your Apple Music Loved songs (osascript, no login) |
+| `npm run ingest:ytmusic` | Add your YouTube Music Liked songs (one-time Google login in Brave) |
+| `npm run corpus:build` | Generate an independent per-song EQ for every catalog song (resumable; daemon must be running) |
+| `tonedeck clusters [--threshold <db>]` | Group presets by tone-only curve shape; show the dB variance that splits them |
+
+The catalog lives at `~/.tonedeck/catalog.json`; generated presets land in `~/.tonedeck/presets/`. Clustering compares the **shape** of each preset's frequency response with loudness normalized out, so two songs that want the same tonal balance land together regardless of overall level — and the report tells you, in dB, how far apart any two clusters are. A higher `--threshold` makes broader groups; a lower one splits hairs.
+
+---
+
 ## 🔧 How it works
 
 ```

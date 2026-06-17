@@ -5,7 +5,7 @@ files: [packages/daemon/src/cdsp.ts]
 
 # CdspClient
 
-`CdspClient` in [[`packages/daemon/src/cdsp.ts`]] is the WebSocket client that sends commands to the [[camilladsp]] process. It serializes all requests through a FIFO queue so only one command is in-flight at a time.
+`CdspClient` in [[packages/daemon/src/cdsp.ts]] is the WebSocket client that sends commands to the [[camilladsp]] process. It serializes all requests through a FIFO queue so only one command is in-flight at a time.
 
 ## FIFO queue
 

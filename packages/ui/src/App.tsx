@@ -30,6 +30,9 @@ function RetryPanel() {
     <div className="retry">
       <div className="retry__inner">
         <div className="retry__mark">ToneDeck</div>
+        <span className="pill pill--status pill--offline" role="status">
+          Offline
+        </span>
         <p className="retry__msg">Can't reach the audio daemon.</p>
         <p className="retry__sub">Make sure the ToneDeck daemon is running, then try again.</p>
         <button type="button" className="btn btn--primary" onClick={() => location.reload()}>

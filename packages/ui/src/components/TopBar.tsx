@@ -5,6 +5,7 @@
  * Now-Playing panel, and a profile avatar.
  */
 import { useStore } from '../store.js'
+import { serviceHealth } from '../serviceHealth.js'
 import { AutoToggle } from './AutoToggle.js'
 
 export function TopBar({
@@ -21,6 +22,7 @@ export function TopBar({
   const { state, actions } = useStore()
 
   const deviceName = state.status?.devices?.current ?? state.profile?.name ?? null
+  const health = serviceHealth(state)
 
   return (
     <header className="tb">
@@ -34,6 +36,15 @@ export function TopBar({
       </div>
 
       <div className="tb__grow" />
+
+      <span
+        className={`pill pill--status pill--${health.health}`}
+        title={health.detail}
+        role="status"
+        aria-label={`Services ${health.label}: ${health.detail}`}
+      >
+        {health.label}
+      </span>
 
       {deviceName && (
         <span className="pill pill--device" title="Active output device">
