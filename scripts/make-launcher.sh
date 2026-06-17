@@ -49,14 +49,21 @@ if ! curl -sf -o /dev/null --max-time 1 "$URL"; then
   done
 fi
 
-# 2. Open the UI. Prefer a chromeless app window (Chrome → Brave);
-#    fall back to the default browser if neither is installed.
+# 2. Open the UI in a chromeless app-mode window (no tabs/address bar).
+#    A dedicated --user-data-dir gives ToneDeck its own browser instance,
+#    isolated from your main browser, so repeat launches reliably surface a
+#    window instead of re-focusing a shared (possibly stale) tab. Prefer
+#    Chrome → Brave; fall back to the default browser if neither is installed.
+PROFILE="${HOME}/.tonedeck/launcher-chrome"
 CHROME="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 BRAVE="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"
-if [ -x "$CHROME" ]; then
-  "$CHROME" --app="$URL" >/dev/null 2>&1 &
-elif [ -x "$BRAVE" ]; then
-  "$BRAVE" --app="$URL" >/dev/null 2>&1 &
+BIN=""
+[ -x "$CHROME" ] && BIN="$CHROME"
+[ -z "$BIN" ] && [ -x "$BRAVE" ] && BIN="$BRAVE"
+if [ -n "$BIN" ]; then
+  mkdir -p "$PROFILE"
+  "$BIN" --user-data-dir="$PROFILE" --app="$URL" \
+    --no-first-run --no-default-browser-check >/dev/null 2>&1 &
 else
   open "$URL"
 fi
