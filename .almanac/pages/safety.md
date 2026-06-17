@@ -13,7 +13,7 @@ The safety pipeline prevents presets from exceeding hardware limits or causing d
 clampPreset() → autoTrim() → headroomVerdict()
 ```
 
-These three functions are exported from [[`packages/shared/src/safety.ts`]] and called in sequence by `PresetStore._runSafety()`.
+These three functions are exported from [[packages/shared/src/safety.ts]] and called in sequence by `PresetStore._runSafety()`.
 
 ## `clampPreset(preset, profile)`
 

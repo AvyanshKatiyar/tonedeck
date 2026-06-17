@@ -19,7 +19,7 @@ Each vibe is a named mapping from band id to gain delta per step:
 | `smoothness` | PresenceTame | cut (negative delta) |
 | `sparkle` | Air | boost |
 
-The exact deltas per step are defined in the `VIBES` constant in [[`packages/shared/src/vibes.ts`]].
+The exact deltas per step are defined in the `VIBES` constant in [[packages/shared/src/vibes.ts]].
 
 ## Step model
 

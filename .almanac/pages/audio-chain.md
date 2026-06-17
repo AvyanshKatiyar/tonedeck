@@ -24,8 +24,8 @@ BlackHole is simultaneously the Mac's output device (where apps send audio) and 
 
 This is guarded against at two layers:
 
-1. **`assertSafePlaybackDevice()`** in [[`packages/shared/src/camillayaml.ts`]] throws if the playback device name is empty, the string `"null"`, or contains the substring `"BlackHole"` (case-insensitive).
-2. **`resolvePlaybackDevice()`** in [[`packages/daemon/src/lifecycle.ts`]] is the authoritative resolver for which output device to use. It never returns a BlackHole device. If the stored `lastRealOutput` matches a BlackHole pattern, it refuses it and falls back to another available CoreAudio device.
+1. **`assertSafePlaybackDevice()`** in [[packages/shared/src/camillayaml.ts]] throws if the playback device name is empty, the string `"null"`, or contains the substring `"BlackHole"` (case-insensitive).
+2. **`resolvePlaybackDevice()`** in [[packages/daemon/src/lifecycle.ts]] is the authoritative resolver for which output device to use. It never returns a BlackHole device. If the stored `lastRealOutput` matches a BlackHole pattern, it refuses it and falls back to another available CoreAudio device.
 
 ## Device watchdog
 

@@ -9,7 +9,7 @@ The UI is a React 19 / Vite 6 single-page app in `packages/ui/`. It is built to 
 
 ## Store model
 
-State is managed by `useReducer` with a discriminated union of `Action` types. The store shape and reducer live in [[`packages/ui/src/storeShape.ts`]]; the provider, hooks, and async action factory live in [[`packages/ui/src/store.tsx`]].
+State is managed by `useReducer` with a discriminated union of `Action` types. The store shape and reducer live in [[packages/ui/src/storeShape.ts]]; the provider, hooks, and async action factory live in [[packages/ui/src/store.tsx]].
 
 **Phases:**
 - `'loading'` — initial state; boot fetches in progress
@@ -46,4 +46,4 @@ The `Actions` interface in `storeShape.ts` defines: `refreshStatus`, `refreshPre
 
 ## Wire types
 
-[[`packages/ui/src/types.ts`]] defines UI-facing shapes that match the daemon's JSON responses: `Status`, `PresetSummary`, `ArtworkResult`, `ApplyResponse`, `MutationResponse`, `Meters`, `WsMessage`. These are not the same as the Zod-validated shared schemas — they are plain TypeScript interfaces for the fetch/WebSocket layer.
+[[packages/ui/src/types.ts]] defines UI-facing shapes that match the daemon's JSON responses: `Status`, `PresetSummary`, `ArtworkResult`, `ApplyResponse`, `MutationResponse`, `Meters`, `WsMessage`. These are not the same as the Zod-validated shared schemas — they are plain TypeScript interfaces for the fetch/WebSocket layer.

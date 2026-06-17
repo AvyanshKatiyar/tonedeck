@@ -5,7 +5,7 @@ files: [packages/shared/src/camillayaml.ts]
 
 # CamillaYaml Emitter
 
-[[`packages/shared/src/camillayaml.ts`]] renders the YAML configuration files that [[camilladsp]] consumes. It uses the `yaml` npm package and never uses string templates, ensuring consistent output.
+[[packages/shared/src/camillayaml.ts]] renders the YAML configuration files that [[camilladsp]] consumes. It uses the `yaml` npm package and never uses string templates, ensuring consistent output.
 
 ## `assertSafePlaybackDevice(name)`
 

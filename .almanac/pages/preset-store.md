@@ -5,7 +5,7 @@ files: [packages/daemon/src/presets.ts]
 
 # Preset Store
 
-`PresetStore` in [[`packages/daemon/src/presets.ts`]] is the persistence layer for all [[preset]] objects. It holds presets in an in-memory `Map<slug, Preset>` backed by the filesystem at `~/.tonedeck/presets/`.
+`PresetStore` in [[packages/daemon/src/presets.ts]] is the persistence layer for all [[preset]] objects. It holds presets in an in-memory `Map<slug, Preset>` backed by the filesystem at `~/.tonedeck/presets/`.
 
 ## Initialization
 
